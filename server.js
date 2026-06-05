@@ -1,89 +1,74 @@
+require('dotenv').config();
 const express = require('express');
 const path    = require('path');
-const fs      = require('fs');
+const { Pool } = require('pg');
 
 const app  = express();
-const PORT = 3000;
-const DB_PATH = path.join(__dirname, 'implantacoes.db');
+const PORT = process.env.PORT || 3000;
 
-// ─── INICIALIZAR sql.js COM PERSISTÊNCIA ────────────────────────
-let db;
-let SQL;
+// ─── CONFIGURAÇÃO DO POSTGRES (NEON) ─────────────────────────────
+if (!process.env.DATABASE_URL) {
+  console.warn('⚠️ AVISO: DATABASE_URL não definida no arquivo .env!');
+}
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false // Necessário para conexões seguras na maioria dos BDs em nuvem (Neon)
+  }
+});
 
 async function initDB() {
-  const initSqlJs = require('sql.js');
-  SQL = await initSqlJs();
-
-  if (fs.existsSync(DB_PATH)) {
-    const fileBuffer = fs.readFileSync(DB_PATH);
-    db = new SQL.Database(fileBuffer);
-    console.log('📂 Banco de dados carregado:', DB_PATH);
-  } else {
-    db = new SQL.Database();
-    console.log('🆕 Novo banco de dados criado:', DB_PATH);
-  }
-
-  // Criar tabela se não existir
-  db.run(`
-    CREATE TABLE IF NOT EXISTS implantacoes (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      tipo TEXT NOT NULL,
-      nome_cliente TEXT,
-      nome_cliente_antigo TEXT,
-      nome_cliente_novo TEXT,
-      nome_loja TEXT,
-      data_inauguracao TEXT NOT NULL,
-      responsavel_tecnico TEXT NOT NULL,
-      observacao TEXT,
-      telefone TEXT,
-      status TEXT NOT NULL DEFAULT 'parado',
-      created_at TEXT DEFAULT (datetime('now','localtime')),
-      updated_at TEXT DEFAULT (datetime('now','localtime'))
-    )
-  `);
-
-  salvarDB();
-}
-
-// Persiste o banco em disco após cada escrita
-function salvarDB() {
+  const client = await pool.connect();
   try {
-    const data = db.export();
-    fs.writeFileSync(DB_PATH, Buffer.from(data));
-  } catch (e) {
-    console.error('Erro ao salvar banco:', e.message);
+    // Criar tabela se não existir
+    // Usamos SERIAL para AUTOINCREMENT, e as funções de data do Postgres
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS implantacoes (
+        id SERIAL PRIMARY KEY,
+        tipo VARCHAR(255) NOT NULL,
+        nome_cliente VARCHAR(255),
+        nome_cliente_antigo VARCHAR(255),
+        nome_cliente_novo VARCHAR(255),
+        nome_loja VARCHAR(255),
+        data_inauguracao VARCHAR(20) NOT NULL,
+        responsavel_tecnico VARCHAR(255) NOT NULL,
+        observacao TEXT,
+        telefone VARCHAR(50),
+        status VARCHAR(50) NOT NULL DEFAULT 'parado',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    console.log('📂 Banco de dados PostgreSQL conectado e tabela verificada.');
+  } finally {
+    client.release();
   }
 }
 
-// ─── HELPERS sql.js ─────────────────────────────────────────────
-// Converte resultado sql.js em array de objetos
-function toRows(stmt) {
-  const rows = [];
-  while (stmt.step()) {
-    rows.push(stmt.getAsObject());
-  }
-  stmt.free();
-  return rows;
+// ─── HELPERS DB ─────────────────────────────────────────────────
+// No pg, os parâmetros usam $1, $2 ao invés de ?
+// Precisamos converter strings com ? para $1, $2, etc.
+function convertSqlToPg(sql) {
+  let count = 1;
+  return sql.replace(/\?/g, () => `$${count++}`);
 }
 
-function runWrite(sql, params = []) {
-  db.run(sql, params);
-  salvarDB();
+async function getAll(sql, params = []) {
+  const pgSql = convertSqlToPg(sql);
+  const result = await pool.query(pgSql, params);
+  return result.rows;
 }
 
-function getAll(sql, params = []) {
-  const stmt = db.prepare(sql);
-  if (params.length) stmt.bind(params);
-  return toRows(stmt);
-}
-
-function getOne(sql, params = []) {
-  const rows = getAll(sql, params);
+async function getOne(sql, params = []) {
+  const rows = await getAll(sql, params);
   return rows[0] || null;
 }
 
-function lastInsertId() {
-  return getOne('SELECT last_insert_rowid() as id').id;
+async function runWrite(sql, params = []) {
+  const pgSql = convertSqlToPg(sql);
+  const result = await pool.query(pgSql, params);
+  return result;
 }
 
 // ─── MIDDLEWARES ────────────────────────────────────────────────
@@ -93,7 +78,7 @@ app.use(express.static(path.join(__dirname, 'docs')));
 // ─────────────────────────────────────────────────────────────────
 // GET /api/implantacoes
 // ─────────────────────────────────────────────────────────────────
-app.get('/api/implantacoes', (req, res) => {
+app.get('/api/implantacoes', async (req, res) => {
   try {
     const { data_inauguracao, nome_cliente, nome_loja, tipo, responsavel, status } = req.query;
 
@@ -106,15 +91,15 @@ app.get('/api/implantacoes', (req, res) => {
     }
     if (nome_cliente) {
       query += ` AND (
-        LOWER(IFNULL(nome_cliente,'')) LIKE ?
-        OR LOWER(IFNULL(nome_cliente_antigo,'')) LIKE ?
-        OR LOWER(IFNULL(nome_cliente_novo,'')) LIKE ?
+        LOWER(COALESCE(nome_cliente,'')) LIKE ?
+        OR LOWER(COALESCE(nome_cliente_antigo,'')) LIKE ?
+        OR LOWER(COALESCE(nome_cliente_novo,'')) LIKE ?
       )`;
       const like = `%${nome_cliente.toLowerCase()}%`;
       params.push(like, like, like);
     }
     if (nome_loja) {
-      query += ' AND LOWER(IFNULL(nome_loja,\'\')) LIKE ?';
+      query += ' AND LOWER(COALESCE(nome_loja,\'\')) LIKE ?';
       params.push(`%${nome_loja.toLowerCase()}%`);
     }
     if (tipo) {
@@ -122,7 +107,7 @@ app.get('/api/implantacoes', (req, res) => {
       params.push(tipo);
     }
     if (responsavel) {
-      query += ' AND LOWER(IFNULL(responsavel_tecnico,\'\')) LIKE ?';
+      query += ' AND LOWER(COALESCE(responsavel_tecnico,\'\')) LIKE ?';
       params.push(`%${responsavel.toLowerCase()}%`);
     }
     if (status) {
@@ -132,7 +117,7 @@ app.get('/api/implantacoes', (req, res) => {
 
     query += ' ORDER BY created_at DESC';
 
-    const rows = getAll(query, params);
+    const rows = await getAll(query, params);
     res.json(rows);
   } catch (err) {
     console.error(err);
@@ -143,7 +128,7 @@ app.get('/api/implantacoes', (req, res) => {
 // ─────────────────────────────────────────────────────────────────
 // POST /api/implantacoes
 // ─────────────────────────────────────────────────────────────────
-app.post('/api/implantacoes', (req, res) => {
+app.post('/api/implantacoes', async (req, res) => {
   try {
     const {
       tipo, nome_cliente, nome_cliente_antigo, nome_cliente_novo,
@@ -155,12 +140,14 @@ app.post('/api/implantacoes', (req, res) => {
       return res.status(400).json({ error: 'Campos obrigatórios faltando.' });
     }
 
-    runWrite(`
+    // No Postgres podemos usar RETURNING id para pegar o ID recém criado
+    const result = await runWrite(`
       INSERT INTO implantacoes
         (tipo, nome_cliente, nome_cliente_antigo, nome_cliente_novo,
          nome_loja, data_inauguracao, responsavel_tecnico,
          observacao, telefone, status)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      RETURNING *
     `, [
       tipo,
       nome_cliente        || null,
@@ -174,8 +161,7 @@ app.post('/api/implantacoes', (req, res) => {
       status              || 'parado'
     ]);
 
-    const newId = lastInsertId();
-    const novo  = getOne('SELECT * FROM implantacoes WHERE id = ?', [newId]);
+    const novo = result.rows[0];
     res.status(201).json(novo);
   } catch (err) {
     console.error(err);
@@ -186,10 +172,10 @@ app.post('/api/implantacoes', (req, res) => {
 // ─────────────────────────────────────────────────────────────────
 // PUT /api/implantacoes/:id
 // ─────────────────────────────────────────────────────────────────
-app.put('/api/implantacoes/:id', (req, res) => {
+app.put('/api/implantacoes/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const existing = getOne('SELECT * FROM implantacoes WHERE id = ?', [id]);
+    const existing = await getOne('SELECT * FROM implantacoes WHERE id = ?', [id]);
     if (!existing) return res.status(404).json({ error: 'Registro não encontrado.' });
 
     const {
@@ -198,13 +184,14 @@ app.put('/api/implantacoes/:id', (req, res) => {
       observacao, telefone, status
     } = req.body;
 
-    runWrite(`
+    const result = await runWrite(`
       UPDATE implantacoes SET
         tipo = ?, nome_cliente = ?, nome_cliente_antigo = ?, nome_cliente_novo = ?,
         nome_loja = ?, data_inauguracao = ?, responsavel_tecnico = ?,
         observacao = ?, telefone = ?, status = ?,
-        updated_at = datetime('now','localtime')
+        updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
+      RETURNING *
     `, [
       tipo,
       nome_cliente        || null,
@@ -219,7 +206,7 @@ app.put('/api/implantacoes/:id', (req, res) => {
       id
     ]);
 
-    const updated = getOne('SELECT * FROM implantacoes WHERE id = ?', [id]);
+    const updated = result.rows[0];
     res.json(updated);
   } catch (err) {
     console.error(err);
@@ -230,7 +217,7 @@ app.put('/api/implantacoes/:id', (req, res) => {
 // ─────────────────────────────────────────────────────────────────
 // PATCH /api/implantacoes/:id/status
 // ─────────────────────────────────────────────────────────────────
-app.patch('/api/implantacoes/:id/status', (req, res) => {
+app.patch('/api/implantacoes/:id/status', async (req, res) => {
   try {
     const { id }     = req.params;
     const { status } = req.body;
@@ -240,16 +227,17 @@ app.patch('/api/implantacoes/:id/status', (req, res) => {
       return res.status(400).json({ error: 'Status inválido.' });
     }
 
-    const existing = getOne('SELECT * FROM implantacoes WHERE id = ?', [id]);
+    const existing = await getOne('SELECT * FROM implantacoes WHERE id = ?', [id]);
     if (!existing) return res.status(404).json({ error: 'Registro não encontrado.' });
 
-    runWrite(`
+    const result = await runWrite(`
       UPDATE implantacoes
-      SET status = ?, updated_at = datetime('now','localtime')
+      SET status = ?, updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
+      RETURNING *
     `, [status, id]);
 
-    const updated = getOne('SELECT * FROM implantacoes WHERE id = ?', [id]);
+    const updated = result.rows[0];
     res.json(updated);
   } catch (err) {
     console.error(err);
@@ -260,13 +248,13 @@ app.patch('/api/implantacoes/:id/status', (req, res) => {
 // ─────────────────────────────────────────────────────────────────
 // DELETE /api/implantacoes/:id
 // ─────────────────────────────────────────────────────────────────
-app.delete('/api/implantacoes/:id', (req, res) => {
+app.delete('/api/implantacoes/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const existing = getOne('SELECT * FROM implantacoes WHERE id = ?', [id]);
+    const existing = await getOne('SELECT * FROM implantacoes WHERE id = ?', [id]);
     if (!existing) return res.status(404).json({ error: 'Registro não encontrado.' });
 
-    runWrite('DELETE FROM implantacoes WHERE id = ?', [id]);
+    await runWrite('DELETE FROM implantacoes WHERE id = ?', [id]);
     res.json({ success: true, id: Number(id) });
   } catch (err) {
     console.error(err);
@@ -278,10 +266,7 @@ app.delete('/api/implantacoes/:id', (req, res) => {
 initDB().then(() => {
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`\n🚀 Servidor iniciado com sucesso!`);
-    console.log(`   Local:   http://localhost:${PORT}`);
-    console.log(`   Rede:    http://0.0.0.0:${PORT}`);
-    console.log(`\n   Para expor via Cloudflare Tunnel:`);
-    console.log(`   cloudflared tunnel --url http://localhost:${PORT}\n`);
+    console.log(`   Porta:   ${PORT}`);
   });
 }).catch(err => {
   console.error('❌ Falha ao inicializar banco de dados:', err);
