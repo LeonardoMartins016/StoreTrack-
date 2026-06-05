@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Controle de Implantação de Lojas</title>
+  <meta name="description" content="Sistema completo de controle de implantação e inauguração de novas lojas. Gerencie clientes, status e responsáveis técnicos." />
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ═══════════════════════════ TOAST ═══════════════════════════ -->
+  <div id="toast-container" aria-live="polite"></div>
+
+  <!-- ═══════════════════════════ HEADER ═══════════════════════════ -->
+  <header class="app-header">
+    <div class="header-left">
+      <div class="header-logo">
+        <i data-lucide="store" class="logo-icon"></i>
+      </div>
+      <div>
+        <h1 class="header-title">Controle de Implantação</h1>
+        <p class="header-subtitle">Gestão de inaugurações de lojas</p>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="header-time" id="header-time"></div>
+      <button id="btn-novo-cadastro" class="btn-primary" onclick="abrirModalCadastro()">
+        <i data-lucide="plus-circle"></i>
+        Novo Cadastro
+      </button>
+    </div>
+  </header>
+
+  <!-- ═══════════════════════════ MAIN ═══════════════════════════ -->
+  <main class="app-main">
+
+    <!-- CARDS DE RESUMO -->
+    <section class="cards-grid" id="cards-resumo">
+      <div class="summary-card" id="card-total">
+        <div class="card-icon-wrap card-icon-orange">
+          <i data-lucide="layers"></i>
+        </div>
+        <div class="card-info">
+          <span class="card-label">Total de Implantações</span>
+          <span class="card-value" id="val-total">—</span>
+        </div>
+        <div class="card-glow card-glow-orange"></div>
+      </div>
+
+      <div class="summary-card" id="card-mes">
+        <div class="card-icon-wrap card-icon-blue">
+          <i data-lucide="calendar-check"></i>
+        </div>
+        <div class="card-info">
+          <span class="card-label">Inaugurações Este Mês</span>
+          <span class="card-value" id="val-mes">—</span>
+        </div>
+        <div class="card-glow card-glow-blue"></div>
+      </div>
+
+      <div class="summary-card" id="card-semana">
+        <div class="card-icon-wrap card-icon-purple">
+          <i data-lucide="calendar-days"></i>
+        </div>
+        <div class="card-info">
+          <span class="card-label">Inaugurações Essa Semana</span>
+          <span class="card-value" id="val-semana">—</span>
+        </div>
+        <div class="card-glow card-glow-purple"></div>
+      </div>
+
+      <div class="summary-card" id="card-andamento">
+        <div class="card-icon-wrap card-icon-amber">
+          <i data-lucide="loader-2"></i>
+        </div>
+        <div class="card-info">
+          <span class="card-label">Em Andamento</span>
+          <span class="card-value" id="val-andamento">—</span>
+        </div>
+        <div class="card-glow card-glow-amber"></div>
+      </div>
+
+      <div class="summary-card" id="card-inaugurados">
+        <div class="card-icon-wrap card-icon-green">
+          <i data-lucide="check-circle-2"></i>
+        </div>
+        <div class="card-info">
+          <span class="card-label">Inaugurados</span>
+          <span class="card-value" id="val-inaugurados">—</span>
+        </div>
+        <div class="card-glow card-glow-green"></div>
+      </div>
+    </section>
+
+    <!-- FILTROS -->
+    <section class="filters-panel">
+      <div class="filters-header">
+        <div class="filters-title">
+          <i data-lucide="sliders-horizontal"></i>
+          <span>Filtros</span>
+        </div>
+        <button class="btn-clear-filters" id="btn-limpar-filtros" onclick="limparFiltros()">
+          <i data-lucide="x-circle"></i>
+          Limpar filtros
+        </button>
+      </div>
+      <div class="filters-grid">
+        <!-- Intervalo de datas ocupa a primeira linha inteira -->
+        <div class="filter-group filter-group-daterange">
+          <label class="filter-label">Período de Inauguração</label>
+          <div class="daterange-wrap">
+            <div class="daterange-field">
+              <span class="daterange-label">De</span>
+              <input type="date" id="f-data-de" class="filter-input" oninput="aplicarFiltros()" />
+            </div>
+            <i data-lucide="arrow-right" class="daterange-arrow"></i>
+            <div class="daterange-field">
+              <span class="daterange-label">Até</span>
+              <input type="date" id="f-data-ate" class="filter-input" oninput="aplicarFiltros()" />
+            </div>
+          </div>
+        </div>
+        <div class="filter-group">
+          <label class="filter-label" for="f-cliente">Nome do Cliente</label>
+          <input type="text" id="f-cliente" class="filter-input" placeholder="Buscar cliente..." oninput="aplicarFiltros()" />
+        </div>
+        <div class="filter-group">
+          <label class="filter-label" for="f-loja">Nome da Loja</label>
+          <input type="text" id="f-loja" class="filter-input" placeholder="Buscar loja..." oninput="aplicarFiltros()" />
+        </div>
+        <div class="filter-group">
+          <label class="filter-label" for="f-tipo">Tipo de Implantação</label>
+          <select id="f-tipo" class="filter-input" onchange="aplicarFiltros()">
+            <option value="">Todos</option>
+            <option value="escalada">Escalada de Loja</option>
+            <option value="cliente_novo">Cliente Novo</option>
+            <option value="troca_titularidade">Troca de Titularidade</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label class="filter-label" for="f-responsavel">Responsável Técnico</label>
+          <input type="text" id="f-responsavel" class="filter-input" placeholder="Buscar responsável..." oninput="aplicarFiltros()" />
+        </div>
+        <div class="filter-group">
+          <label class="filter-label" for="f-status">Status</label>
+          <select id="f-status" class="filter-input" onchange="aplicarFiltros()">
+            <option value="">Todos</option>
+            <option value="parado">Parado</option>
+            <option value="em_andamento">Em Andamento</option>
+            <option value="inaugurado">Inaugurado</option>
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <!-- TABELA -->
+    <section class="table-panel">
+      <div class="table-header">
+        <span class="table-counter" id="table-counter">Carregando...</span>
+      </div>
+      <div class="table-wrapper">
+        <table class="main-table" id="main-table">
+          <thead>
+            <tr>
+              <th class="sortable" data-col="tipo" onclick="sortBy('tipo')">
+                Tipo <i data-lucide="chevrons-up-down" class="sort-icon"></i>
+              </th>
+              <th class="sortable" data-col="cliente" onclick="sortBy('cliente')">
+                Cliente <i data-lucide="chevrons-up-down" class="sort-icon"></i>
+              </th>
+              <th class="sortable" data-col="nome_loja" onclick="sortBy('nome_loja')">
+                Loja <i data-lucide="chevrons-up-down" class="sort-icon"></i>
+              </th>
+              <th class="sortable" data-col="data_inauguracao" onclick="sortBy('data_inauguracao')">
+                Inauguração <i data-lucide="chevrons-up-down" class="sort-icon"></i>
+              </th>
+              <th class="sortable" data-col="responsavel_tecnico" onclick="sortBy('responsavel_tecnico')">
+                Responsável <i data-lucide="chevrons-up-down" class="sort-icon"></i>
+              </th>
+              <th>Status</th>
+              <th>Telefone</th>
+              <th>Observação</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="table-body">
+            <tr class="empty-row">
+              <td colspan="9">
+                <div class="empty-state">
+                  <i data-lucide="database" class="empty-icon"></i>
+                  <p>Nenhum registro encontrado</p>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <!-- ═══════════════════════ MODAL CADASTRO ═══════════════════════ -->
+  <div id="modal-cadastro" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h2 class="modal-title" id="modal-title">Novo Cadastro</h2>
+        <button class="modal-close" onclick="fecharModalCadastro()" aria-label="Fechar">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Tipo de implantação -->
+        <div class="tipo-selector">
+          <button type="button" class="tipo-btn active" id="tipo-escalada" onclick="selecionarTipo('escalada')">
+            <i data-lucide="trending-up"></i>
+            Escalada de Loja
+          </button>
+          <button type="button" class="tipo-btn" id="tipo-cliente_novo" onclick="selecionarTipo('cliente_novo')">
+            <i data-lucide="user-plus"></i>
+            Cliente Novo
+          </button>
+          <button type="button" class="tipo-btn" id="tipo-troca_titularidade" onclick="selecionarTipo('troca_titularidade')">
+            <i data-lucide="refresh-cw"></i>
+            Troca de Titularidade
+          </button>
+        </div>
+
+        <form id="form-cadastro" novalidate>
+          <input type="hidden" id="edit-id" />
+
+          <!-- Campo: Nome do cliente (Escalada + Cliente Novo) -->
+          <div class="form-group" id="fg-nome-cliente">
+            <label class="form-label" for="nome-cliente">
+              Nome do Cliente <span class="required">*</span>
+            </label>
+            <input type="text" id="nome-cliente" class="form-input" placeholder="Digite o nome do cliente" />
+          </div>
+
+          <!-- Campo: Nome do cliente antigo (Troca) -->
+          <div class="form-group hidden" id="fg-nome-cliente-antigo">
+            <label class="form-label" for="nome-cliente-antigo">
+              Nome do Cliente Antigo <span class="required">*</span>
+            </label>
+            <input type="text" id="nome-cliente-antigo" class="form-input" placeholder="Nome do cliente saindo" />
+          </div>
+
+          <!-- Campo: Nome do cliente novo (Troca) -->
+          <div class="form-group hidden" id="fg-nome-cliente-novo">
+            <label class="form-label" for="nome-cliente-novo">
+              Nome do Cliente Novo <span class="required">*</span>
+            </label>
+            <input type="text" id="nome-cliente-novo" class="form-input" placeholder="Nome do cliente entrando" />
+          </div>
+
+          <!-- Campo: Nome da loja (Escalada + Troca) -->
+          <div class="form-group" id="fg-nome-loja">
+            <label class="form-label" for="nome-loja">
+              Nome da Loja <span class="required">*</span>
+            </label>
+            <input type="text" id="nome-loja" class="form-input" placeholder="Nome da loja" />
+          </div>
+
+          <!-- Linha dupla: Data + Responsável -->
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="data-inauguracao">
+                Data de Inauguração <span class="required">*</span>
+              </label>
+              <input type="date" id="data-inauguracao" class="form-input" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="responsavel-tecnico">
+                Responsável Técnico <span class="required">*</span>
+              </label>
+              <input type="text" id="responsavel-tecnico" class="form-input" placeholder="Nome do responsável" />
+            </div>
+          </div>
+
+          <!-- Linha dupla: Telefone + Status -->
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="telefone">Telefone para Contato</label>
+              <input type="text" id="telefone" class="form-input" placeholder="(00) 00000-0000" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="status-form">Status</label>
+              <select id="status-form" class="form-input">
+                <option value="parado">🔴 Parado</option>
+                <option value="em_andamento">🟡 Em Andamento</option>
+                <option value="inaugurado">🟢 Inaugurado</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Observação -->
+          <div class="form-group">
+            <label class="form-label" for="observacao">Observação</label>
+            <textarea id="observacao" class="form-input form-textarea" rows="3" placeholder="Observações adicionais..."></textarea>
+          </div>
+        </form>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn-ghost" onclick="fecharModalCadastro()">Cancelar</button>
+        <button type="button" class="btn-primary" id="btn-salvar" onclick="salvarCadastro()">
+          <i data-lucide="save"></i>
+          Salvar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════ MODAL EXCLUIR ═══════════════════════ -->
+  <div id="modal-excluir" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-excluir-title">
+    <div class="modal-box modal-box-sm">
+      <div class="modal-header">
+        <h2 class="modal-title" id="modal-excluir-title">Confirmar Exclusão</h2>
+        <button class="modal-close" onclick="fecharModalExcluir()" aria-label="Fechar">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="delete-confirm-icon">
+          <i data-lucide="trash-2"></i>
+        </div>
+        <p class="delete-confirm-text">Tem certeza que deseja excluir este registro?</p>
+        <p class="delete-confirm-subtext" id="delete-confirm-name"></p>
+        <p class="delete-warning">Esta ação não pode ser desfeita.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-ghost" onclick="fecharModalExcluir()">Cancelar</button>
+        <button type="button" class="btn-danger" id="btn-confirmar-excluir" onclick="confirmarExclusao()">
+          <i data-lucide="trash-2"></i>
+          Excluir
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
