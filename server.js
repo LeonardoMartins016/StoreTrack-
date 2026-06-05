@@ -88,7 +88,7 @@ function lastInsertId() {
 
 // ─── MIDDLEWARES ────────────────────────────────────────────────
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'Docs')));
 
 // ─────────────────────────────────────────────────────────────────
 // GET /api/implantacoes
