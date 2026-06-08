@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════
    CONTROLE DE IMPLANTAÇÃO — app.js
-   Toda lógica frontend: API, tabela, filtros, modais, toasts
+   Toda lógica frontend: API, tabela, filtros, modais, toasts, abas
    ═══════════════════════════════════════════════════════════════ */
 
 'use strict';
@@ -12,10 +12,12 @@ let sortState       = { col: null, dir: 'asc' };
 let editingId       = null;
 let deletingId      = null;
 let currentTipo     = 'escalada';
+let abaAtiva        = 'implantacoes';
+
+// ID pendente para inauguração (vindo do dropdown de status)
+let inaugurandoId   = null;
 
 // ─── PORTAL DROPDOWN (status) ───────────────────────────────────
-// Um único <div> montado no <body> com position:fixed.
-// Isso garante que nunca é cortado por overflow:hidden/auto dos pais.
 let portalDD       = null;
 let portalTargetId = null;
 
@@ -41,9 +43,16 @@ function criarPortalDropdown() {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
       if (portalTargetId !== null) {
-        mudarStatus(portalTargetId, btn.dataset.status);
+        const novoStatus = btn.dataset.status;
+        if (novoStatus === 'inaugurado') {
+          // Abre o modal de inauguração em vez de mudar direto
+          fecharPortalDropdown();
+          abrirModalInauguracao(portalTargetId);
+        } else {
+          mudarStatus(portalTargetId, novoStatus);
+          fecharPortalDropdown();
+        }
       }
-      fecharPortalDropdown();
     });
   });
 }
@@ -60,18 +69,15 @@ function abrirPortalDropdown(e, id) {
 
   portalTargetId = id;
 
-  // Calcula posição do botão no viewport
   const rect     = e.currentTarget.getBoundingClientRect();
   const ddWidth  = 180;
-  const ddHeight = 122; // aprox. 3 itens × ~40px + padding
+  const ddHeight = 122;
 
-  // Abre abaixo ou acima conforme espaço disponível
   const spaceBelow = window.innerHeight - rect.bottom;
   const top = spaceBelow >= ddHeight + 8
     ? rect.bottom + 6
     : rect.top - ddHeight - 6;
 
-  // Alinha à esquerda do botão, evita sair da tela pela direita
   let left = rect.left;
   if (left + ddWidth > window.innerWidth - 8) {
     left = window.innerWidth - ddWidth - 8;
@@ -116,6 +122,21 @@ function iniciarRelogio() {
   setInterval(atualizar, 1000);
 }
 
+// ─── ABAS ────────────────────────────────────────────────────────
+function mudarAba(aba) {
+  abaAtiva = aba;
+
+  document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+  document.getElementById(`tab-btn-${aba}`).classList.add('active');
+  document.getElementById(`aba-${aba}`).classList.add('active');
+
+  if (aba === 'suporte') {
+    carregarSuporte();
+  }
+}
+
 // ─── API ─────────────────────────────────────────────────────────
 async function api(method, path, body) {
   const opts = {
@@ -145,13 +166,11 @@ function atualizarCards() {
   const total = allRecords.length;
   const agora = new Date();
 
-  // Este mês
   const anoMes = `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, '0')}`;
   const estesMes = allRecords.filter(r => r.data_inauguracao && r.data_inauguracao.startsWith(anoMes)).length;
 
-  // Essa semana (segunda a domingo, ISO)
   const hoje      = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate());
-  const diaSemana = hoje.getDay() === 0 ? 6 : hoje.getDay() - 1; // 0=seg, 6=dom
+  const diaSemana = hoje.getDay() === 0 ? 6 : hoje.getDay() - 1;
   const segunda   = new Date(hoje); segunda.setDate(hoje.getDate() - diaSemana);
   const domingo   = new Date(segunda); domingo.setDate(segunda.getDate() + 6);
   const isoSeg    = segunda.toISOString().slice(0, 10);
@@ -193,7 +212,6 @@ function aplicarFiltros() {
   const fStatus  = document.getElementById('f-status').value;
 
   filteredRecords = allRecords.filter(r => {
-    // Intervalo de datas: só aplica os lados preenchidos
     if (fDataDe  && r.data_inauguracao < fDataDe)  return false;
     if (fDataAte && r.data_inauguracao > fDataAte) return false;
     if (fCliente) {
@@ -221,6 +239,12 @@ function limparFiltros() {
     document.getElementById(id).value = '';
   });
   aplicarFiltros();
+}
+
+function limparFiltrosSuporte() {
+  document.getElementById('s-cliente').value = '';
+  document.getElementById('s-loja').value    = '';
+  carregarSuporte();
 }
 
 // ─── ORDENAÇÃO ────────────────────────────────────────────────────
@@ -332,6 +356,14 @@ function formatarData(iso) {
   return `${d}/${m}/${y}`;
 }
 
+function diasDesde(iso) {
+  if (!iso) return null;
+  const data = new Date(iso + 'T00:00:00');
+  const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0);
+  return Math.floor((hoje - data) / (1000 * 60 * 60 * 24));
+}
+
 function escHtml(str) {
   return String(str)
     .replace(/&/g,  '&amp;')
@@ -378,6 +410,113 @@ async function mudarStatus(id, novoStatus) {
   } catch (e) {
     showToast('Erro: ' + e.message, 'error');
   }
+}
+
+// ─── MODAL DE INAUGURAÇÃO ─────────────────────────────────────────
+function abrirModalInauguracao(id) {
+  inaugurandoId = id;
+  const r = allRecords.find(x => x.id === id);
+  if (!r) return;
+
+  document.getElementById('inaug-id').value = id;
+  document.getElementById('inaug-cliente-display').textContent = clienteDisplay(r);
+
+  // Preenche com dados existentes se já inaugurado antes
+  document.getElementById('inaug-data').value     = r.data_inauguracao_real || r.data_inauguracao || '';
+  document.getElementById('inaug-servidor').value = r.servidor              || '';
+  document.getElementById('inaug-login').value    = r.login_loja_express    || '';
+  document.getElementById('inaug-senha').value    = r.senha_loja_express    || '';
+
+  // Reset visibilidade da senha
+  const senhaInput = document.getElementById('inaug-senha');
+  senhaInput.type = 'password';
+  const eyeIcon = document.getElementById('pass-eye-icon');
+  eyeIcon.setAttribute('data-lucide', 'eye');
+  lucide.createIcons();
+
+  abrirModal('modal-inauguracao');
+}
+
+function fecharModalInauguracao() {
+  inaugurandoId = null;
+  fecharModal('modal-inauguracao');
+}
+
+async function confirmarInauguracao() {
+  const id      = document.getElementById('inaug-id').value;
+  const data    = document.getElementById('inaug-data').value;
+  const servidor= document.getElementById('inaug-servidor').value;
+  const login   = document.getElementById('inaug-login').value.trim();
+  const senha   = document.getElementById('inaug-senha').value.trim();
+
+  // Validação
+  let ok = true;
+  if (!data) {
+    document.getElementById('inaug-data').classList.add('error');
+    ok = false;
+  } else {
+    document.getElementById('inaug-data').classList.remove('error');
+  }
+  if (!servidor) {
+    document.getElementById('inaug-servidor').classList.add('error');
+    ok = false;
+  } else {
+    document.getElementById('inaug-servidor').classList.remove('error');
+  }
+
+  if (!ok) {
+    showToast('Preencha os campos obrigatórios.', 'error');
+    return;
+  }
+
+  const btn = document.getElementById('btn-confirmar-inauguracao');
+  btn.disabled = true;
+  btn.innerHTML = '<i data-lucide="loader-2" class="spinning"></i> Confirmando...';
+  lucide.createIcons();
+
+  try {
+    const updated = await api('PATCH', `/api/implantacoes/${id}/inaugurar`, {
+      data_inauguracao_real: data,
+      servidor,
+      login_loja_express: login || null,
+      senha_loja_express: senha || null,
+    });
+
+    const idx = allRecords.findIndex(r => r.id === Number(id));
+    if (idx !== -1) allRecords[idx] = updated;
+
+    fecharModalInauguracao();
+    aplicarFiltros();
+    atualizarCards();
+    showToast('🎉 Inauguração confirmada com sucesso!', 'success');
+  } catch (e) {
+    showToast('Erro ao confirmar: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i data-lucide="rocket"></i> Confirmar Inauguração';
+    lucide.createIcons();
+  }
+}
+
+function toggleSenhaVisibilidade() {
+  const input   = document.getElementById('inaug-senha');
+  const eyeIcon = document.getElementById('pass-eye-icon');
+  if (input.type === 'password') {
+    input.type = 'text';
+    eyeIcon.setAttribute('data-lucide', 'eye-off');
+  } else {
+    input.type = 'password';
+    eyeIcon.setAttribute('data-lucide', 'eye');
+  }
+  lucide.createIcons();
+}
+
+// ─── CHANGE STATUS NO FORM (para novo cadastro/edição) ─────────────
+function onStatusFormChange(val) {
+  // No form de cadastro/edição, se o usuário selecionar "inaugurado"
+  // não fazemos nada especial - o modal de inauguração só aparece
+  // quando se muda pelo dropdown da tabela.
+  // O status pode ser salvo normalmente pelo form de edição.
 }
 
 // ─── MODAL CADASTRO ───────────────────────────────────────────────
@@ -500,7 +639,6 @@ async function salvarCadastro() {
       showToast('Cadastro realizado com sucesso!', 'success');
     }
 
-    // Recarrega todos os registros da API (mais seguro que atualizar localmente)
     allRecords = await api('GET', '/api/implantacoes');
 
     fecharModalCadastro();
@@ -553,6 +691,109 @@ async function confirmarExclusao() {
   }
 }
 
+// ─── ABA SUPORTE ──────────────────────────────────────────────────
+async function carregarSuporte() {
+  const nomeCliente = document.getElementById('s-cliente').value.trim();
+  const nomeLoja    = document.getElementById('s-loja').value.trim();
+
+  const params = new URLSearchParams();
+  if (nomeCliente) params.append('nome_cliente', nomeCliente);
+  if (nomeLoja)    params.append('nome_loja',    nomeLoja);
+
+  const tbody  = document.getElementById('suporte-table-body');
+  const counter = document.getElementById('suporte-table-counter');
+
+  tbody.innerHTML = `
+    <tr class="empty-row">
+      <td colspan="9">
+        <div class="empty-state">
+          <i data-lucide="loader-2" class="empty-icon spinning"></i>
+          <p>Carregando...</p>
+        </div>
+      </td>
+    </tr>`;
+  lucide.createIcons();
+
+  try {
+    const rows = await api('GET', `/api/suporte?${params.toString()}`);
+
+    // Atualiza badge da aba
+    const badge = document.getElementById('tab-badge-suporte');
+    if (rows.length > 0) {
+      badge.textContent = rows.length;
+      badge.style.display = 'inline-flex';
+    } else {
+      badge.style.display = 'none';
+    }
+
+    // Atualiza contadores
+    document.getElementById('suporte-count').textContent = rows.length;
+    counter.innerHTML = `<span>${rows.length}</span> cliente${rows.length !== 1 ? 's' : ''} no suporte`;
+
+    if (rows.length === 0) {
+      tbody.innerHTML = `
+        <tr class="empty-row">
+          <td colspan="9">
+            <div class="empty-state">
+              <i data-lucide="check-circle-2" class="empty-icon" style="color:var(--status-ok);opacity:.5"></i>
+              <p>Nenhum cliente elegível para suporte ainda</p>
+              <p style="font-size:11px;margin-top:4px;opacity:.5">Clientes aparecem aqui após 15 dias da inauguração</p>
+            </div>
+          </td>
+        </tr>`;
+      lucide.createIcons();
+      return;
+    }
+
+    tbody.innerHTML = '';
+    rows.forEach(r => {
+      const dias = diasDesde(r.data_inauguracao_real);
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${badgeTipo(r.tipo)}</td>
+        <td><strong>${escHtml(clienteDisplay(r))}</strong></td>
+        <td>${escHtml(r.nome_loja || '—')}</td>
+        <td style="white-space:nowrap">${formatarData(r.data_inauguracao_real)}</td>
+        <td>${renderDiasBadge(dias)}</td>
+        <td>${renderServidorBadge(r.servidor)}</td>
+        <td class="login-cell">${r.login_loja_express ? escHtml(r.login_loja_express) : '<span style="opacity:.35">—</span>'}</td>
+        <td>${escHtml(r.responsavel_tecnico || '—')}</td>
+        <td class="tel-cell">${r.telefone ? escHtml(r.telefone) : '<span style="opacity:.35">—</span>'}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    lucide.createIcons();
+  } catch (e) {
+    tbody.innerHTML = `
+      <tr class="empty-row">
+        <td colspan="9">
+          <div class="empty-state">
+            <i data-lucide="alert-circle" class="empty-icon" style="color:var(--status-parado)"></i>
+            <p>Erro ao carregar: ${escHtml(e.message)}</p>
+          </div>
+        </td>
+      </tr>`;
+    lucide.createIcons();
+  }
+}
+
+function renderDiasBadge(dias) {
+  if (dias === null) return '—';
+  let cls = 'dias-badge-ok';
+  if (dias > 30) cls = 'dias-badge-warn';
+  if (dias > 60) cls = 'dias-badge-alert';
+  return `<span class="dias-badge ${cls}">${dias} dias</span>`;
+}
+
+function renderServidorBadge(servidor) {
+  if (!servidor) return '<span style="opacity:.35">—</span>';
+  const isNuvem = servidor === 'Nuvem';
+  return `<span class="servidor-badge ${isNuvem ? 'servidor-nuvem' : 'servidor-local'}">
+    ${isNuvem ? '☁️' : '🖥️'} ${escHtml(servidor)}
+  </span>`;
+}
+
 // ─── HELPER MODAL ─────────────────────────────────────────────────
 function abrirModal(id) {
   fecharPortalDropdown();
@@ -573,17 +814,24 @@ function fecharModal(id) {
 
 // Fechar modal ao clicar no overlay
 document.addEventListener('click', (e) => {
+  if (e.target.id === 'modal-inauguracao' && e.target.classList.contains('open')) {
+    // Modal de inauguração NÃO fecha ao clicar no overlay (comportamento intencional)
+    return;
+  }
   if (e.target.classList.contains('modal-overlay') && e.target.classList.contains('open')) {
     e.target.classList.remove('open');
     document.body.style.overflow = '';
   }
 });
 
-// ESC fecha modal e dropdown
+// ESC fecha modal e dropdown (exceto modal de inauguração)
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
+    // Fecha todos exceto modal de inauguração (que exige ação explícita)
     document.querySelectorAll('.modal-overlay.open').forEach(m => {
-      m.classList.remove('open');
+      if (m.id !== 'modal-inauguracao') {
+        m.classList.remove('open');
+      }
     });
     document.body.style.overflow = '';
     fecharPortalDropdown();

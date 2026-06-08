@@ -36,10 +36,25 @@ async function initDB() {
         observacao TEXT,
         telefone VARCHAR(50),
         status VARCHAR(50) NOT NULL DEFAULT 'parado',
+        data_inauguracao_real VARCHAR(20),
+        servidor VARCHAR(50),
+        login_loja_express VARCHAR(255),
+        senha_loja_express VARCHAR(255),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
+
+    // Adiciona colunas de inauguração se não existirem (migração segura)
+    const migracoes = [
+      `ALTER TABLE implantacoes ADD COLUMN IF NOT EXISTS data_inauguracao_real VARCHAR(20)`,
+      `ALTER TABLE implantacoes ADD COLUMN IF NOT EXISTS servidor VARCHAR(50)`,
+      `ALTER TABLE implantacoes ADD COLUMN IF NOT EXISTS login_loja_express VARCHAR(255)`,
+      `ALTER TABLE implantacoes ADD COLUMN IF NOT EXISTS senha_loja_express VARCHAR(255)`,
+    ];
+    for (const sql of migracoes) {
+      await client.query(sql);
+    }
     console.log('📂 Banco de dados PostgreSQL conectado e tabela verificada.');
   } finally {
     client.release();
@@ -239,6 +254,82 @@ app.patch('/api/implantacoes/:id/status', async (req, res) => {
 
     const updated = result.rows[0];
     res.json(updated);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────
+// PATCH /api/implantacoes/:id/inaugurar
+// Salva os dados de inauguração e muda status para inaugurado
+// ─────────────────────────────────────────────────────────────────
+app.patch('/api/implantacoes/:id/inaugurar', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { data_inauguracao_real, servidor, login_loja_express, senha_loja_express } = req.body;
+
+    if (!data_inauguracao_real || !servidor) {
+      return res.status(400).json({ error: 'Data de inauguração e servidor são obrigatórios.' });
+    }
+
+    const existing = await getOne('SELECT * FROM implantacoes WHERE id = ?', [id]);
+    if (!existing) return res.status(404).json({ error: 'Registro não encontrado.' });
+
+    const result = await runWrite(`
+      UPDATE implantacoes
+      SET status = 'inaugurado',
+          data_inauguracao_real = ?,
+          servidor = ?,
+          login_loja_express = ?,
+          senha_loja_express = ?,
+          updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+      RETURNING *
+    `, [data_inauguracao_real, servidor, login_loja_express || null, senha_loja_express || null, id]);
+
+    const updated = result.rows[0];
+    res.json(updated);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────
+// GET /api/suporte
+// Retorna clientes inaugurados há mais de 15 dias
+// ─────────────────────────────────────────────────────────────────
+app.get('/api/suporte', async (req, res) => {
+  try {
+    const { nome_cliente, nome_loja } = req.query;
+
+    let query = `
+      SELECT * FROM implantacoes
+      WHERE status = 'inaugurado'
+        AND data_inauguracao_real IS NOT NULL
+        AND (CURRENT_DATE - CAST(data_inauguracao_real AS DATE)) >= 15
+    `;
+    const params = [];
+
+    if (nome_cliente) {
+      query += ` AND (
+        LOWER(COALESCE(nome_cliente,'')) LIKE ?
+        OR LOWER(COALESCE(nome_cliente_antigo,'')) LIKE ?
+        OR LOWER(COALESCE(nome_cliente_novo,'')) LIKE ?
+      )`;
+      const like = `%${nome_cliente.toLowerCase()}%`;
+      params.push(like, like, like);
+    }
+    if (nome_loja) {
+      query += ` AND LOWER(COALESCE(nome_loja,'')) LIKE ?`;
+      params.push(`%${nome_loja.toLowerCase()}%`);
+    }
+
+    query += ' ORDER BY data_inauguracao_real DESC';
+
+    const rows = await getAll(query, params);
+    res.json(rows);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });
