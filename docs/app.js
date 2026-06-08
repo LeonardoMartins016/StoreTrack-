@@ -44,12 +44,13 @@ function criarPortalDropdown() {
       e.stopPropagation();
       if (portalTargetId !== null) {
         const novoStatus = btn.dataset.status;
+        const idAlvo = portalTargetId; // salva antes de fechar (fechar zera portalTargetId)
         if (novoStatus === 'inaugurado') {
           // Abre o modal de inauguração em vez de mudar direto
           fecharPortalDropdown();
-          abrirModalInauguracao(portalTargetId);
+          abrirModalInauguracao(idAlvo);
         } else {
-          mudarStatus(portalTargetId, novoStatus);
+          mudarStatus(idAlvo, novoStatus);
           fecharPortalDropdown();
         }
       }
