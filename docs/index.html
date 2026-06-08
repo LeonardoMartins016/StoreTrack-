@@ -15,6 +15,18 @@
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
 
   <link rel="stylesheet" href="style.css" />
+
+  <!-- Verifica autenticação antes de qualquer coisa -->
+  <script>
+    (function() {
+      fetch('/api/auth/check')
+        .then(r => r.json())
+        .then(d => {
+          if (!d.loggedIn) location.replace('/login.html');
+        })
+        .catch(() => location.replace('/login.html'));
+    })();
+  </script>
 </head>
 <body>
 
@@ -34,9 +46,17 @@
     </div>
     <div class="header-right">
       <div class="header-time" id="header-time"></div>
+      <div class="header-user" id="header-user">
+        <i data-lucide="circle-user-round"></i>
+        <span id="header-username">Suporte</span>
+      </div>
       <button id="btn-novo-cadastro" class="btn-primary" onclick="abrirModalCadastro()">
         <i data-lucide="plus-circle"></i>
         Novo Cadastro
+      </button>
+      <button class="btn-logout" onclick="fazerLogout()" title="Sair">
+        <i data-lucide="log-out"></i>
+        Sair
       </button>
     </div>
   </header>

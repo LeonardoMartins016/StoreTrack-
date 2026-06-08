@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login — Controle de Implantação</title>
+  <meta name="description" content="Acesso ao sistema de controle de implantação e inauguração de lojas." />
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-main:       #0f1117;
+      --bg-card:       #1a1d27;
+      --bg-input:      #1e2235;
+      --primary:       #f97316;
+      --primary-hover: #ea6c0a;
+      --text-primary:  #ffffff;
+      --text-secondary:#9ca3af;
+      --border:        #2d3148;
+      --status-parado: #ef4444;
+      --font: 'Inter', system-ui, -apple-system, sans-serif;
+      --radius-md: 10px;
+      --radius-lg: 16px;
+      --transition: .2s cubic-bezier(.4,0,.2,1);
+    }
+
+    html, body {
+      height: 100%;
+      font-family: var(--font);
+      background: var(--bg-main);
+      color: var(--text-primary);
+      overflow: hidden;
+    }
+
+    /* ── BACKGROUND ANIMADO ── */
+    .login-bg {
+      position: fixed;
+      inset: 0;
+      background: var(--bg-main);
+      z-index: 0;
+    }
+
+    .login-bg::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image:
+        radial-gradient(circle at 20% 20%, rgba(249,115,22,.12) 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(99,102,241,.08) 0%, transparent 50%),
+        radial-gradient(circle at 60% 10%, rgba(34,197,94,.06) 0%, transparent 40%);
+      animation: bgPulse 8s ease-in-out infinite alternate;
+    }
+
+    @keyframes bgPulse {
+      0%   { opacity: .7; transform: scale(1); }
+      100% { opacity: 1;  transform: scale(1.05); }
+    }
+
+    /* Grade pontilhada */
+    .login-bg::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image: radial-gradient(circle, rgba(255,255,255,.04) 1px, transparent 1px);
+      background-size: 32px 32px;
+      pointer-events: none;
+    }
+
+    /* ── CONTAINER ── */
+    .login-container {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    /* ── CARD ── */
+    .login-card {
+      width: 100%;
+      max-width: 420px;
+      background: rgba(26,29,39,.85);
+      border: 1px solid rgba(45,49,72,.8);
+      border-radius: 24px;
+      padding: 40px 36px;
+      backdrop-filter: blur(20px);
+      box-shadow:
+        0 24px 80px rgba(0,0,0,.6),
+        0 0 0 1px rgba(249,115,22,.06),
+        inset 0 1px 0 rgba(255,255,255,.05);
+      animation: cardIn .5s cubic-bezier(.34,1.56,.64,1) both;
+    }
+
+    @keyframes cardIn {
+      from { opacity: 0; transform: translateY(32px) scale(.96); }
+      to   { opacity: 1; transform: translateY(0)    scale(1); }
+    }
+
+    /* ── LOGO ── */
+    .login-logo-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 36px;
+    }
+
+    .login-logo-icon {
+      width: 64px;
+      height: 64px;
+      border-radius: 18px;
+      background: linear-gradient(135deg, #f97316, #ff4500);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow:
+        0 0 0 8px rgba(249,115,22,.1),
+        0 0 32px rgba(249,115,22,.4);
+      animation: iconPulse 3s ease-in-out infinite;
+    }
+    .login-logo-icon svg { width: 30px; height: 30px; color: #fff; }
+
+    @keyframes iconPulse {
+      0%, 100% { box-shadow: 0 0 0 8px rgba(249,115,22,.1), 0 0 32px rgba(249,115,22,.4); }
+      50%       { box-shadow: 0 0 0 12px rgba(249,115,22,.06), 0 0 48px rgba(249,115,22,.6); }
+    }
+
+    .login-title {
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--text-primary);
+      text-align: center;
+      letter-spacing: -.02em;
+    }
+
+    .login-subtitle {
+      font-size: 13px;
+      color: var(--text-secondary);
+      text-align: center;
+      margin-top: 4px;
+    }
+
+    /* ── FORM ── */
+    .login-form { display: flex; flex-direction: column; gap: 18px; }
+
+    .form-group { display: flex; flex-direction: column; gap: 7px; }
+
+    .form-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: var(--text-secondary);
+    }
+
+    .input-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .input-icon {
+      position: absolute;
+      left: 13px;
+      width: 16px;
+      height: 16px;
+      color: var(--text-secondary);
+      pointer-events: none;
+      flex-shrink: 0;
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 12px 14px 12px 40px;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      color: var(--text-primary);
+      font-family: var(--font);
+      font-size: 14px;
+      outline: none;
+      transition: var(--transition);
+    }
+    .form-input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(249,115,22,.15);
+    }
+    .form-input::placeholder { color: var(--text-secondary); }
+    .form-input.error {
+      border-color: var(--status-parado);
+      box-shadow: 0 0 0 3px rgba(239,68,68,.15);
+    }
+
+    /* Botão olho na senha */
+    .btn-eye {
+      position: absolute;
+      right: 12px;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      padding: 4px;
+      border-radius: 4px;
+      transition: color var(--transition);
+    }
+    .btn-eye:hover { color: var(--text-primary); }
+    .btn-eye svg { width: 16px; height: 16px; }
+
+    /* ── ERRO ── */
+    .error-msg {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 13px;
+      background: rgba(239,68,68,.08);
+      border: 1px solid rgba(239,68,68,.2);
+      border-radius: var(--radius-md);
+      font-size: 13px;
+      color: #fca5a5;
+    }
+    .error-msg.show { display: flex; }
+    .error-msg svg { width: 15px; height: 15px; flex-shrink: 0; color: var(--status-parado); }
+
+    /* ── BOTÃO LOGIN ── */
+    .btn-login {
+      width: 100%;
+      padding: 13px 20px;
+      background: linear-gradient(135deg, var(--primary), #ff4500);
+      color: #fff;
+      font-family: var(--font);
+      font-size: 15px;
+      font-weight: 700;
+      border: none;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: var(--transition);
+      box-shadow: 0 0 24px rgba(249,115,22,.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 6px;
+      letter-spacing: .01em;
+    }
+    .btn-login:hover {
+      background: linear-gradient(135deg, var(--primary-hover), #dd3d00);
+      box-shadow: 0 0 36px rgba(249,115,22,.6);
+      transform: translateY(-1px);
+    }
+    .btn-login:active { transform: translateY(0); }
+    .btn-login:disabled { opacity: .6; cursor: not-allowed; transform: none; }
+    .btn-login svg { width: 17px; height: 17px; }
+
+    /* ── FOOTER ── */
+    .login-footer {
+      margin-top: 28px;
+      padding-top: 20px;
+      border-top: 1px solid rgba(45,49,72,.6);
+      text-align: center;
+      font-size: 11px;
+      color: rgba(156,163,175,.4);
+    }
+
+    /* ── SPINNER ── */
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinning { animation: spin 1s linear infinite; display: inline-block; }
+
+    /* ── SCROLLBAR ── */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg-main); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+  </style>
+</head>
+<body>
+
+  <div class="login-bg"></div>
+
+  <div class="login-container">
+    <div class="login-card">
+
+      <!-- Logo + Título -->
+      <div class="login-logo-wrap">
+        <div class="login-logo-icon">
+          <i data-lucide="store"></i>
+        </div>
+        <div>
+          <h1 class="login-title">Controle de Implantação</h1>
+          <p class="login-subtitle">Faça login para acessar o sistema</p>
+        </div>
+      </div>
+
+      <!-- Mensagem de erro -->
+      <div class="error-msg" id="error-msg">
+        <i data-lucide="alert-circle"></i>
+        <span id="error-text">Usuário ou senha incorretos.</span>
+      </div>
+
+      <!-- Formulário -->
+      <form class="login-form" id="login-form" onsubmit="fazerLogin(event)" novalidate>
+
+        <div class="form-group">
+          <label class="form-label" for="input-usuario">Usuário</label>
+          <div class="input-wrap">
+            <i data-lucide="user" class="input-icon"></i>
+            <input
+              type="text"
+              id="input-usuario"
+              class="form-input"
+              placeholder="Digite seu usuário"
+              autocomplete="username"
+              required
+            />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="input-senha">Senha</label>
+          <div class="input-wrap">
+            <i data-lucide="lock" class="input-icon"></i>
+            <input
+              type="password"
+              id="input-senha"
+              class="form-input"
+              placeholder="Digite sua senha"
+              autocomplete="current-password"
+              required
+            />
+            <button type="button" class="btn-eye" id="btn-eye" onclick="toggleSenha()" title="Mostrar/ocultar senha">
+              <i data-lucide="eye" id="eye-icon"></i>
+            </button>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-login" id="btn-login">
+          <i data-lucide="log-in"></i>
+          Entrar
+        </button>
+
+      </form>
+
+      <div class="login-footer">
+        StoreTrack &copy; 2026 · Acesso restrito
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    lucide.createIcons();
+
+    // Se já está logado, redireciona direto
+    fetch('/api/auth/check')
+      .then(r => r.json())
+      .then(d => { if (d.loggedIn) location.href = '/index.html'; });
+
+    function toggleSenha() {
+      const input   = document.getElementById('input-senha');
+      const icon    = document.getElementById('eye-icon');
+      const showing = input.type === 'text';
+      input.type = showing ? 'password' : 'text';
+      icon.setAttribute('data-lucide', showing ? 'eye' : 'eye-off');
+      lucide.createIcons();
+    }
+
+    async function fazerLogin(e) {
+      e.preventDefault();
+
+      const usuario = document.getElementById('input-usuario').value.trim();
+      const senha   = document.getElementById('input-senha').value;
+      const btn     = document.getElementById('btn-login');
+      const errorEl = document.getElementById('error-msg');
+      const errorTx = document.getElementById('error-text');
+
+      // Limpa erros
+      errorEl.classList.remove('show');
+      document.getElementById('input-usuario').classList.remove('error');
+      document.getElementById('input-senha').classList.remove('error');
+
+      // Validação básica
+      if (!usuario || !senha) {
+        if (!usuario) document.getElementById('input-usuario').classList.add('error');
+        if (!senha)   document.getElementById('input-senha').classList.add('error');
+        errorTx.textContent = 'Preencha todos os campos.';
+        errorEl.classList.add('show');
+        lucide.createIcons();
+        return;
+      }
+
+      // Loading
+      btn.disabled = true;
+      btn.innerHTML = '<i data-lucide="loader-2" class="spinning"></i> Entrando...';
+      lucide.createIcons();
+
+      try {
+        const res  = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ usuario, senha }),
+        });
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+          btn.innerHTML = '<i data-lucide="check-circle-2"></i> Sucesso!';
+          lucide.createIcons();
+          setTimeout(() => { location.href = '/index.html'; }, 500);
+        } else {
+          throw new Error(data.error || 'Erro ao fazer login.');
+        }
+      } catch (err) {
+        errorTx.textContent = err.message;
+        errorEl.classList.add('show');
+        document.getElementById('input-usuario').classList.add('error');
+        document.getElementById('input-senha').classList.add('error');
+        lucide.createIcons();
+
+        btn.disabled = false;
+        btn.innerHTML = '<i data-lucide="log-in"></i> Entrar';
+        lucide.createIcons();
+      }
+    }
+  </script>
+
+</body>
+</html>

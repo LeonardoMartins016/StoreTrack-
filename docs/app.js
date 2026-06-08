@@ -100,6 +100,15 @@ document.addEventListener('DOMContentLoaded', () => {
   iniciarRelogio();
   carregarDados();
 
+  // Carrega nome do usuário logado
+  fetch('/api/auth/check')
+    .then(r => r.json())
+    .then(d => {
+      if (!d.loggedIn) { location.replace('/login.html'); return; }
+      const el = document.getElementById('header-username');
+      if (el && d.usuario) el.textContent = d.usuario;
+    });
+
   // Fecha dropdown ao clicar fora
   document.addEventListener('click', (e) => {
     if (!e.target.closest('.status-dropdown-portal') &&
@@ -108,6 +117,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 });
+
+// ─── LOGOUT ────────────────────────────────────────────────
+async function fazerLogout() {
+  await fetch('/api/auth/logout', { method: 'POST' });
+  location.replace('/login.html');
+}
 
 // ─── RELÓGIO ────────────────────────────────────────────────────
 function iniciarRelogio() {
@@ -146,6 +161,10 @@ async function api(method, path, body) {
   };
   if (body) opts.body = JSON.stringify(body);
   const res  = await fetch(path, opts);
+  if (res.status === 401) {
+    location.replace('/login.html');
+    throw new Error('Sessão expirada.');
+  }
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || 'Erro desconhecido');
   return data;

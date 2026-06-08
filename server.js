@@ -1,10 +1,15 @@
 require('dotenv').config();
 const express = require('express');
 const path    = require('path');
+const session = require('express-session');
 const { Pool } = require('pg');
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
+
+// ─── CREDENCIAIS (fixas) ─────────────────────────────────────────
+const USUARIO_LOGIN = process.env.APP_USER  || 'Suporte';
+const SENHA_LOGIN   = process.env.APP_PASS  || 'ADM$UPORTE';
 
 // ─── CONFIGURAÇÃO DO POSTGRES (NEON) ─────────────────────────────
 if (!process.env.DATABASE_URL) {
@@ -86,14 +91,48 @@ async function runWrite(sql, params = []) {
   return result;
 }
 
-// ─── MIDDLEWARES ────────────────────────────────────────────────
+// ─── MIDDLEWARES ──────────────────────────────────────────────
 app.use(express.json());
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'storetrack-s3cr3t-2024',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    maxAge: 8 * 60 * 60 * 1000, // 8 horas
+    httpOnly: true,
+  }
+}));
 app.use(express.static(path.join(__dirname, 'docs')));
+
+// ─── AUTH MIDDLEWARE ───────────────────────────────────────────
+function requireAuth(req, res, next) {
+  if (req.session && req.session.loggedIn) return next();
+  return res.status(401).json({ error: 'Não autorizado. Faça login.' });
+}
+
+// ─── ROTAS DE AUTENTICAÇÃO ───────────────────────────────────────
+app.post('/api/auth/login', (req, res) => {
+  const { usuario, senha } = req.body;
+  if (usuario === USUARIO_LOGIN && senha === SENHA_LOGIN) {
+    req.session.loggedIn = true;
+    req.session.usuario  = usuario;
+    return res.json({ success: true });
+  }
+  return res.status(401).json({ error: 'Usuário ou senha incorretos.' });
+});
+
+app.post('/api/auth/logout', (req, res) => {
+  req.session.destroy(() => res.json({ success: true }));
+});
+
+app.get('/api/auth/check', (req, res) => {
+  res.json({ loggedIn: !!(req.session && req.session.loggedIn), usuario: req.session.usuario || null });
+});
 
 // ─────────────────────────────────────────────────────────────────
 // GET /api/implantacoes
 // ─────────────────────────────────────────────────────────────────
-app.get('/api/implantacoes', async (req, res) => {
+app.get('/api/implantacoes', requireAuth, async (req, res) => {
   try {
     const { data_inauguracao, nome_cliente, nome_loja, tipo, responsavel, status } = req.query;
 
@@ -143,7 +182,7 @@ app.get('/api/implantacoes', async (req, res) => {
 // ─────────────────────────────────────────────────────────────────
 // POST /api/implantacoes
 // ─────────────────────────────────────────────────────────────────
-app.post('/api/implantacoes', async (req, res) => {
+app.post('/api/implantacoes', requireAuth, async (req, res) => {
   try {
     const {
       tipo, nome_cliente, nome_cliente_antigo, nome_cliente_novo,
@@ -187,7 +226,7 @@ app.post('/api/implantacoes', async (req, res) => {
 // ─────────────────────────────────────────────────────────────────
 // PUT /api/implantacoes/:id
 // ─────────────────────────────────────────────────────────────────
-app.put('/api/implantacoes/:id', async (req, res) => {
+app.put('/api/implantacoes/:id', requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
     const existing = await getOne('SELECT * FROM implantacoes WHERE id = ?', [id]);
@@ -232,7 +271,7 @@ app.put('/api/implantacoes/:id', async (req, res) => {
 // ─────────────────────────────────────────────────────────────────
 // PATCH /api/implantacoes/:id/status
 // ─────────────────────────────────────────────────────────────────
-app.patch('/api/implantacoes/:id/status', async (req, res) => {
+app.patch('/api/implantacoes/:id/status', requireAuth, async (req, res) => {
   try {
     const { id }     = req.params;
     const { status } = req.body;
@@ -264,7 +303,7 @@ app.patch('/api/implantacoes/:id/status', async (req, res) => {
 // PATCH /api/implantacoes/:id/inaugurar
 // Salva os dados de inauguração e muda status para inaugurado
 // ─────────────────────────────────────────────────────────────────
-app.patch('/api/implantacoes/:id/inaugurar', async (req, res) => {
+app.patch('/api/implantacoes/:id/inaugurar', requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
     const { data_inauguracao_real, servidor, login_loja_express, senha_loja_express, observacao } = req.body;
@@ -302,7 +341,7 @@ app.patch('/api/implantacoes/:id/inaugurar', async (req, res) => {
 // GET /api/suporte
 // Retorna clientes inaugurados há mais de 15 dias
 // ─────────────────────────────────────────────────────────────────
-app.get('/api/suporte', async (req, res) => {
+app.get('/api/suporte', requireAuth, async (req, res) => {
   try {
     const { nome_cliente, nome_loja } = req.query;
 
@@ -341,7 +380,7 @@ app.get('/api/suporte', async (req, res) => {
 // ─────────────────────────────────────────────────────────────────
 // DELETE /api/implantacoes/:id
 // ─────────────────────────────────────────────────────────────────
-app.delete('/api/implantacoes/:id', async (req, res) => {
+app.delete('/api/implantacoes/:id', requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
     const existing = await getOne('SELECT * FROM implantacoes WHERE id = ?', [id]);
@@ -355,6 +394,14 @@ app.delete('/api/implantacoes/:id', async (req, res) => {
   }
 });
 
+// ─── ROTA RAIZ: redireciona para login ───────────────────────────
+app.get('/', (req, res) => {
+  if (req.session && req.session.loggedIn) {
+    return res.redirect('/index.html');
+  }
+  res.redirect('/login.html');
+});
+
 // ─── INICIAR ─────────────────────────────────────────────────────
 initDB().then(() => {
   app.listen(PORT, '0.0.0.0', () => {
@@ -365,3 +412,4 @@ initDB().then(() => {
   console.error('❌ Falha ao inicializar banco de dados:', err);
   process.exit(1);
 });
+
