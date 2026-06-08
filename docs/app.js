@@ -688,7 +688,7 @@ async function carregarSuporte() {
 
   tbody.innerHTML = `
     <tr class="empty-row">
-      <td colspan="10">
+      <td colspan="11">
         <div class="empty-state">
           <i data-lucide="loader-2" class="empty-icon spinning"></i>
           <p>Carregando...</p>
@@ -716,7 +716,7 @@ async function carregarSuporte() {
     if (rows.length === 0) {
       tbody.innerHTML = `
         <tr class="empty-row">
-          <td colspan="10">
+          <td colspan="11">
             <div class="empty-state">
               <i data-lucide="check-circle-2" class="empty-icon" style="color:var(--status-ok);opacity:.5"></i>
               <p>Nenhum cliente elegível para suporte ainda</p>
@@ -732,6 +732,8 @@ async function carregarSuporte() {
     rows.forEach(r => {
       const dias = diasDesde(r.data_inauguracao_real);
       const tr = document.createElement('tr');
+      const obs = r.observacao || '';
+      const obsShort = obs.length > 55 ? obs.slice(0, 55) + '…' : obs;
       tr.innerHTML = `
         <td>${badgeTipo(r.tipo)}</td>
         <td><strong>${escHtml(clienteDisplay(r))}</strong></td>
@@ -743,6 +745,7 @@ async function carregarSuporte() {
         <td class="login-cell">${r.senha_loja_express ? escHtml(r.senha_loja_express) : '<span style="opacity:.35">—</span>'}</td>
         <td>${escHtml(r.responsavel_tecnico || '—')}</td>
         <td class="tel-cell">${r.telefone ? escHtml(r.telefone) : '<span style="opacity:.35">—</span>'}</td>
+        <td class="obs-cell" title="${escHtml(obs)}">${obsShort ? escHtml(obsShort) : '<span style="opacity:.25">—</span>'}</td>
       `;
       tbody.appendChild(tr);
     });
@@ -751,7 +754,7 @@ async function carregarSuporte() {
   } catch (e) {
     tbody.innerHTML = `
       <tr class="empty-row">
-        <td colspan="10">
+        <td colspan="11">
           <div class="empty-state">
             <i data-lucide="alert-circle" class="empty-icon" style="color:var(--status-parado)"></i>
             <p>Erro ao carregar: ${escHtml(e.message)}</p>
