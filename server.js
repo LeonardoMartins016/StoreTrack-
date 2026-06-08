@@ -267,7 +267,7 @@ app.patch('/api/implantacoes/:id/status', async (req, res) => {
 app.patch('/api/implantacoes/:id/inaugurar', async (req, res) => {
   try {
     const { id } = req.params;
-    const { data_inauguracao_real, servidor, login_loja_express, senha_loja_express } = req.body;
+    const { data_inauguracao_real, servidor, login_loja_express, senha_loja_express, observacao } = req.body;
 
     if (!data_inauguracao_real || !servidor) {
       return res.status(400).json({ error: 'Data de inauguração e servidor são obrigatórios.' });
@@ -283,10 +283,11 @@ app.patch('/api/implantacoes/:id/inaugurar', async (req, res) => {
           servidor = ?,
           login_loja_express = ?,
           senha_loja_express = ?,
+          observacao = ?,
           updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
       RETURNING *
-    `, [data_inauguracao_real, servidor, login_loja_express || null, senha_loja_express || null, id]);
+    `, [data_inauguracao_real, servidor, login_loja_express || null, senha_loja_express || null, observacao || null, id]);
 
     const updated = result.rows[0];
     res.json(updated);
@@ -295,6 +296,7 @@ app.patch('/api/implantacoes/:id/inaugurar', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
 
 // ─────────────────────────────────────────────────────────────────
 // GET /api/suporte

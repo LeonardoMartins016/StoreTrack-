@@ -284,13 +284,14 @@
                 <th>Dias no Suporte</th>
                 <th>Servidor</th>
                 <th>Login Loja Express</th>
+                <th>Senha Loja Express</th>
                 <th>Responsável</th>
                 <th>Telefone</th>
               </tr>
             </thead>
             <tbody id="suporte-table-body">
               <tr class="empty-row">
-                <td colspan="9">
+                <td colspan="10">
                   <div class="empty-state">
                     <i data-lucide="loader-2" class="empty-icon spinning"></i>
                     <p>Carregando...</p>
@@ -502,13 +503,14 @@
             </div>
             <div class="form-group">
               <label class="form-label" for="inaug-senha">Senha do Loja Express</label>
-              <div class="password-field-wrap">
-                <input type="password" id="inaug-senha" class="form-input" placeholder="Senha do sistema" />
-                <button type="button" class="btn-toggle-pass" onclick="toggleSenhaVisibilidade()" id="btn-toggle-pass" title="Mostrar/ocultar senha">
-                  <i data-lucide="eye" id="pass-eye-icon"></i>
-                </button>
-              </div>
+              <input type="text" id="inaug-senha" class="form-input" placeholder="Senha do sistema" />
             </div>
+          </div>
+
+          <!-- Observação -->
+          <div class="form-group">
+            <label class="form-label" for="inaug-observacao">Observação</label>
+            <textarea id="inaug-observacao" class="form-input form-textarea" rows="3" placeholder="Observações sobre a inauguração..."></textarea>
           </div>
         </form>
       </div>

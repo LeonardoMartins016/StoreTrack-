@@ -423,17 +423,11 @@ function abrirModalInauguracao(id) {
   document.getElementById('inaug-cliente-display').textContent = clienteDisplay(r);
 
   // Preenche com dados existentes se já inaugurado antes
-  document.getElementById('inaug-data').value     = r.data_inauguracao_real || r.data_inauguracao || '';
-  document.getElementById('inaug-servidor').value = r.servidor              || '';
-  document.getElementById('inaug-login').value    = r.login_loja_express    || '';
-  document.getElementById('inaug-senha').value    = r.senha_loja_express    || '';
-
-  // Reset visibilidade da senha
-  const senhaInput = document.getElementById('inaug-senha');
-  senhaInput.type = 'password';
-  const eyeIcon = document.getElementById('pass-eye-icon');
-  eyeIcon.setAttribute('data-lucide', 'eye');
-  lucide.createIcons();
+  document.getElementById('inaug-data').value          = r.data_inauguracao_real || r.data_inauguracao || '';
+  document.getElementById('inaug-servidor').value      = r.servidor              || '';
+  document.getElementById('inaug-login').value         = r.login_loja_express    || '';
+  document.getElementById('inaug-senha').value         = r.senha_loja_express    || '';
+  document.getElementById('inaug-observacao').value    = r.observacao            || '';
 
   abrirModal('modal-inauguracao');
 }
@@ -481,6 +475,7 @@ async function confirmarInauguracao() {
       servidor,
       login_loja_express: login || null,
       senha_loja_express: senha || null,
+      observacao: document.getElementById('inaug-observacao').value.trim() || null,
     });
 
     const idx = allRecords.findIndex(r => r.id === Number(id));
@@ -497,19 +492,6 @@ async function confirmarInauguracao() {
     btn.innerHTML = '<i data-lucide="rocket"></i> Confirmar Inauguração';
     lucide.createIcons();
   }
-}
-
-function toggleSenhaVisibilidade() {
-  const input   = document.getElementById('inaug-senha');
-  const eyeIcon = document.getElementById('pass-eye-icon');
-  if (input.type === 'password') {
-    input.type = 'text';
-    eyeIcon.setAttribute('data-lucide', 'eye-off');
-  } else {
-    input.type = 'password';
-    eyeIcon.setAttribute('data-lucide', 'eye');
-  }
-  lucide.createIcons();
 }
 
 // ─── CHANGE STATUS NO FORM (para novo cadastro/edição) ─────────────
@@ -706,7 +688,7 @@ async function carregarSuporte() {
 
   tbody.innerHTML = `
     <tr class="empty-row">
-      <td colspan="9">
+      <td colspan="10">
         <div class="empty-state">
           <i data-lucide="loader-2" class="empty-icon spinning"></i>
           <p>Carregando...</p>
@@ -734,7 +716,7 @@ async function carregarSuporte() {
     if (rows.length === 0) {
       tbody.innerHTML = `
         <tr class="empty-row">
-          <td colspan="9">
+          <td colspan="10">
             <div class="empty-state">
               <i data-lucide="check-circle-2" class="empty-icon" style="color:var(--status-ok);opacity:.5"></i>
               <p>Nenhum cliente elegível para suporte ainda</p>
@@ -758,6 +740,7 @@ async function carregarSuporte() {
         <td>${renderDiasBadge(dias)}</td>
         <td>${renderServidorBadge(r.servidor)}</td>
         <td class="login-cell">${r.login_loja_express ? escHtml(r.login_loja_express) : '<span style="opacity:.35">—</span>'}</td>
+        <td class="login-cell">${r.senha_loja_express ? escHtml(r.senha_loja_express) : '<span style="opacity:.35">—</span>'}</td>
         <td>${escHtml(r.responsavel_tecnico || '—')}</td>
         <td class="tel-cell">${r.telefone ? escHtml(r.telefone) : '<span style="opacity:.35">—</span>'}</td>
       `;
@@ -768,7 +751,7 @@ async function carregarSuporte() {
   } catch (e) {
     tbody.innerHTML = `
       <tr class="empty-row">
-        <td colspan="9">
+        <td colspan="10">
           <div class="empty-state">
             <i data-lucide="alert-circle" class="empty-icon" style="color:var(--status-parado)"></i>
             <p>Erro ao carregar: ${escHtml(e.message)}</p>
