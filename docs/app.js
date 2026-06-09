@@ -212,12 +212,14 @@ function atualizarCards() {
 
   const emAndamento = allRecords.filter(r => r.status === 'em_andamento').length;
   const inaugurados = allRecords.filter(r => r.status === 'inaugurado').length;
+  const parados     = allRecords.filter(r => r.status === 'parado').length;
 
   animarNumero('val-total',       total);
   animarNumero('val-mes',         estesMes);
   animarNumero('val-semana',      essaSemana);
   animarNumero('val-andamento',   emAndamento);
   animarNumero('val-inaugurados', inaugurados);
+  animarNumero('val-parados',     parados);
 }
 
 function animarNumero(id, target) {
