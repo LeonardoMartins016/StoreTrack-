@@ -14,6 +14,11 @@
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
 
+  <!-- Export: SheetJS (Excel) + jsPDF (PDF) -->
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.4/jspdf.plugin.autotable.min.js"></script>
+
   <link rel="stylesheet" href="style.css" />
 
   <!-- Verifica autenticação antes de qualquer coisa -->
@@ -207,6 +212,27 @@
       <section class="table-panel">
         <div class="table-header">
           <span class="table-counter" id="table-counter">Carregando...</span>
+          <div class="export-dropdown-wrap">
+            <button class="btn-export" onclick="toggleExportMenu('export-menu-impl')" title="Exportar relatório">
+              <i data-lucide="download"></i>
+              Exportar
+              <i data-lucide="chevron-down" class="export-chevron"></i>
+            </button>
+            <div class="export-menu" id="export-menu-impl">
+              <button class="export-menu-item" onclick="exportarImplantacoes('excel')">
+                <i data-lucide="file-spreadsheet"></i>
+                <span>Excel (.xlsx)</span>
+              </button>
+              <button class="export-menu-item" onclick="exportarImplantacoes('txt')">
+                <i data-lucide="file-text"></i>
+                <span>Texto (.txt)</span>
+              </button>
+              <button class="export-menu-item" onclick="exportarImplantacoes('pdf')">
+                <i data-lucide="file-down"></i>
+                <span>PDF (.pdf)</span>
+              </button>
+            </div>
+          </div>
         </div>
         <div class="table-wrapper">
           <table class="main-table" id="main-table">
@@ -296,6 +322,27 @@
       <section class="table-panel">
         <div class="table-header">
           <span class="table-counter" id="suporte-table-counter">Carregando...</span>
+          <div class="export-dropdown-wrap">
+            <button class="btn-export" onclick="toggleExportMenu('export-menu-suporte')" title="Exportar relatório">
+              <i data-lucide="download"></i>
+              Exportar
+              <i data-lucide="chevron-down" class="export-chevron"></i>
+            </button>
+            <div class="export-menu" id="export-menu-suporte">
+              <button class="export-menu-item" onclick="exportarSuporte('excel')">
+                <i data-lucide="file-spreadsheet"></i>
+                <span>Excel (.xlsx)</span>
+              </button>
+              <button class="export-menu-item" onclick="exportarSuporte('txt')">
+                <i data-lucide="file-text"></i>
+                <span>Texto (.txt)</span>
+              </button>
+              <button class="export-menu-item" onclick="exportarSuporte('pdf')">
+                <i data-lucide="file-down"></i>
+                <span>PDF (.pdf)</span>
+              </button>
+            </div>
+          </div>
         </div>
         <div class="table-wrapper">
           <table class="main-table" id="suporte-table">

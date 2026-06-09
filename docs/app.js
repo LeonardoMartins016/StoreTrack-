@@ -121,6 +121,10 @@ document.addEventListener('DOMContentLoaded', () => {
         !e.target.closest('.status-btn')) {
       fecharPortalDropdown();
     }
+    // Fecha menus de exportação ao clicar fora
+    if (!e.target.closest('.export-dropdown-wrap')) {
+      document.querySelectorAll('.export-menu.open').forEach(m => m.classList.remove('open'));
+    }
   });
 });
 
@@ -1075,5 +1079,234 @@ async function confirmarExclusaoResp() {
     btn.disabled = false;
     btn.innerHTML = '<i data-lucide="trash-2"></i> Excluir';
     lucide.createIcons();
+  }
+}
+
+// ─── EXPORTAÇÃO DE RELATÓRIOS ───────────────────────────────────
+function toggleExportMenu(menuId) {
+  const menu = document.getElementById(menuId);
+  // Fecha outros menus abertos
+  document.querySelectorAll('.export-menu.open').forEach(m => {
+    if (m.id !== menuId) m.classList.remove('open');
+  });
+  menu.classList.toggle('open');
+  lucide.createIcons();
+}
+
+function fecharExportMenus() {
+  document.querySelectorAll('.export-menu.open').forEach(m => m.classList.remove('open'));
+}
+
+// ---- Helpers de exportação ----
+function tipoLabel(tipo) {
+  const map = { escalada: 'Escalada', cliente_novo: 'Cliente Novo', troca_titularidade: 'Troca de Titularidade' };
+  return map[tipo] || tipo;
+}
+
+function statusLabel(status) {
+  const map = { parado: 'Parado', em_andamento: 'Em Andamento', inaugurado: 'Inaugurado' };
+  return map[status] || status;
+}
+
+function gerarTimestamp() {
+  const d = new Date();
+  return `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}_${String(d.getHours()).padStart(2,'0')}${String(d.getMinutes()).padStart(2,'0')}`;
+}
+
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 100);
+}
+
+// ---- Implantações ----
+function dadosImplantacoesParaExport() {
+  return filteredRecords.map(r => ({
+    'Tipo':                tipoLabel(r.tipo),
+    'Cliente':             clienteDisplay(r),
+    'Loja':                r.nome_loja || '',
+    'Data Inauguração':    formatarData(r.data_inauguracao),
+    'Responsável Técnico': r.responsavel_tecnico || '',
+    'Status':              statusLabel(r.status),
+    'Telefone':            r.telefone || '',
+    'Observação':          r.observacao || '',
+  }));
+}
+
+function exportarImplantacoes(formato) {
+  fecharExportMenus();
+  const dados = dadosImplantacoesParaExport();
+  if (dados.length === 0) {
+    showToast('Nenhum registro para exportar.', 'error');
+    return;
+  }
+  const ts = gerarTimestamp();
+  const titulo = 'Relatório de Implantações';
+
+  if (formato === 'excel') exportarExcel(dados, `implantacoes_${ts}`, titulo);
+  else if (formato === 'txt') exportarTxt(dados, `implantacoes_${ts}`, titulo);
+  else if (formato === 'pdf') exportarPdf(dados, `implantacoes_${ts}`, titulo);
+}
+
+// ---- Suporte ----
+function dadosSuporteParaExport() {
+  // Pega os dados já renderizados na tabela de suporte
+  const tbody = document.getElementById('suporte-table-body');
+  if (!tbody) return [];
+  const rows = tbody.querySelectorAll('tr:not(.empty-row)');
+  const dados = [];
+  rows.forEach(tr => {
+    const cells = tr.querySelectorAll('td');
+    if (cells.length >= 11) {
+      dados.push({
+        'Tipo':                cells[0].textContent.trim(),
+        'Cliente':             cells[1].textContent.trim(),
+        'Loja':                cells[2].textContent.trim(),
+        'Data Inauguração':    cells[3].textContent.trim(),
+        'Dias no Suporte':     cells[4].textContent.trim(),
+        'Servidor':            cells[5].textContent.trim(),
+        'Login Loja Express':  cells[6].textContent.trim(),
+        'Senha Loja Express':  cells[7].textContent.trim(),
+        'Responsável':         cells[8].textContent.trim(),
+        'Telefone':            cells[9].textContent.trim(),
+        'Observação':          cells[10].textContent.trim(),
+      });
+    }
+  });
+  return dados;
+}
+
+function exportarSuporte(formato) {
+  fecharExportMenus();
+  const dados = dadosSuporteParaExport();
+  if (dados.length === 0) {
+    showToast('Nenhum registro para exportar.', 'error');
+    return;
+  }
+  const ts = gerarTimestamp();
+  const titulo = 'Relatório de Clientes no Suporte';
+
+  if (formato === 'excel') exportarExcel(dados, `suporte_${ts}`, titulo);
+  else if (formato === 'txt') exportarTxt(dados, `suporte_${ts}`, titulo);
+  else if (formato === 'pdf') exportarPdf(dados, `suporte_${ts}`, titulo);
+}
+
+// ---- EXCEL ----
+function exportarExcel(dados, nomeArquivo, tituloSheet) {
+  try {
+    const ws = XLSX.utils.json_to_sheet(dados);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, tituloSheet.substring(0, 31));
+
+    // Auto-ajuste de largura das colunas
+    const cols = Object.keys(dados[0]).map(key => {
+      const maxLen = Math.max(
+        key.length,
+        ...dados.map(row => String(row[key] || '').length)
+      );
+      return { wch: Math.min(maxLen + 2, 40) };
+    });
+    ws['!cols'] = cols;
+
+    XLSX.writeFile(wb, `${nomeArquivo}.xlsx`);
+    showToast('📄 Excel exportado com sucesso!', 'success');
+  } catch (e) {
+    showToast('Erro ao exportar Excel: ' + e.message, 'error');
+  }
+}
+
+// ---- TXT ----
+function exportarTxt(dados, nomeArquivo, titulo) {
+  try {
+    const colunas = Object.keys(dados[0]);
+    // Calcula largura de cada coluna
+    const larguras = colunas.map(col =>
+      Math.max(col.length, ...dados.map(r => String(r[col] || '').length)) + 2
+    );
+
+    let txt = `${titulo}\n`;
+    txt += `Gerado em: ${new Date().toLocaleString('pt-BR')}\n`;
+    txt += `Total de registros: ${dados.length}\n`;
+    txt += '='.repeat(larguras.reduce((a, b) => a + b, 0)) + '\n\n';
+
+    // Cabeçalho
+    txt += colunas.map((col, i) => col.padEnd(larguras[i])).join('') + '\n';
+    txt += colunas.map((_, i) => '-'.repeat(larguras[i])).join('') + '\n';
+
+    // Dados
+    dados.forEach(row => {
+      txt += colunas.map((col, i) => String(row[col] || '—').padEnd(larguras[i])).join('') + '\n';
+    });
+
+    const blob = new Blob([txt], { type: 'text/plain;charset=utf-8' });
+    downloadBlob(blob, `${nomeArquivo}.txt`);
+    showToast('📄 TXT exportado com sucesso!', 'success');
+  } catch (e) {
+    showToast('Erro ao exportar TXT: ' + e.message, 'error');
+  }
+}
+
+// ---- PDF ----
+function exportarPdf(dados, nomeArquivo, titulo) {
+  try {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+
+    // Título
+    doc.setFontSize(16);
+    doc.setTextColor(40, 40, 40);
+    doc.text(titulo, 14, 18);
+
+    // Subtítulo
+    doc.setFontSize(9);
+    doc.setTextColor(130, 130, 130);
+    doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}  |  Total: ${dados.length} registros`, 14, 25);
+
+    // Tabela
+    const colunas = Object.keys(dados[0]);
+    const linhas = dados.map(row => colunas.map(col => String(row[col] || '—')));
+
+    doc.autoTable({
+      head: [colunas],
+      body: linhas,
+      startY: 30,
+      theme: 'grid',
+      styles: {
+        fontSize: 8,
+        cellPadding: 3,
+        lineColor: [200, 200, 200],
+        lineWidth: 0.2,
+      },
+      headStyles: {
+        fillColor: [249, 115, 22],
+        textColor: [255, 255, 255],
+        fontStyle: 'bold',
+        fontSize: 8.5,
+      },
+      alternateRowStyles: {
+        fillColor: [248, 248, 248],
+      },
+      margin: { top: 30, left: 14, right: 14 },
+      didDrawPage: (data) => {
+        // Rodapé
+        doc.setFontSize(8);
+        doc.setTextColor(160, 160, 160);
+        const pageNum = doc.internal.getNumberOfPages();
+        doc.text(
+          `Página ${data.pageNumber} de ${pageNum}  —  Controle de Implantação`,
+          doc.internal.pageSize.width / 2, doc.internal.pageSize.height - 8,
+          { align: 'center' }
+        );
+      }
+    });
+
+    doc.save(`${nomeArquivo}.pdf`);
+    showToast('📄 PDF exportado com sucesso!', 'success');
+  } catch (e) {
+    showToast('Erro ao exportar PDF: ' + e.message, 'error');
   }
 }
