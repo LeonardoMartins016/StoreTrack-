@@ -381,15 +381,15 @@ function renderizarTabela() {
     const obs = r.observacao || '';
     const obsShort = obs.length > 55 ? obs.slice(0, 55) + '…' : obs;
     tr.innerHTML = `
-      <td>${badgeTipo(r.tipo)}</td>
-      <td>${escHtml(clienteDisplay(r))}</td>
-      <td>${escHtml(r.nome_loja || '—')}</td>
-      <td style="white-space:nowrap">${formatarData(r.data_inauguracao)}</td>
-      <td>${escHtml(r.responsavel_tecnico || '—')}</td>
-      <td>${renderStatusBtn(r)}</td>
-      <td class="tel-cell">${r.telefone ? escHtml(r.telefone) : '<span style="opacity:.35">—</span>'}</td>
-      <td class="obs-cell" title="${escHtml(obs)}">${obsShort ? escHtml(obsShort) : '<span style="opacity:.25">—</span>'}</td>
-      <td>
+      <td data-label="Tipo">${badgeTipo(r.tipo)}</td>
+      <td data-label="Cliente">${escHtml(clienteDisplay(r))}</td>
+      <td data-label="Loja">${escHtml(r.nome_loja || '—')}</td>
+      <td data-label="Inauguração" style="white-space:nowrap">${formatarData(r.data_inauguracao)}</td>
+      <td data-label="Responsável">${escHtml(r.responsavel_tecnico || '—')}</td>
+      <td data-label="Status">${renderStatusBtn(r)}</td>
+      <td data-label="Telefone" class="tel-cell">${r.telefone ? escHtml(r.telefone) : '<span style="opacity:.35">—</span>'}</td>
+      <td data-label="Observação" class="obs-cell" title="${escHtml(obs)}">${obsShort ? escHtml(obsShort) : '<span style="opacity:.25">—</span>'}</td>
+      <td data-label="Ações">
         <div class="acoes-wrap">
           <button class="btn-icon" title="Editar" onclick="abrirModalEdicao(${r.id})">
             <i data-lucide="pencil"></i>
@@ -805,17 +805,17 @@ async function carregarSuporte() {
       const obs = r.observacao || '';
       const obsShort = obs.length > 55 ? obs.slice(0, 55) + '…' : obs;
       tr.innerHTML = `
-        <td>${badgeTipo(r.tipo)}</td>
-        <td><strong>${escHtml(clienteDisplay(r))}</strong></td>
-        <td>${escHtml(r.nome_loja || '—')}</td>
-        <td style="white-space:nowrap">${formatarData(r.data_inauguracao_real)}</td>
-        <td>${renderDiasBadge(dias)}</td>
-        <td>${renderServidorBadge(r.servidor)}</td>
-        <td class="login-cell">${r.login_loja_express ? escHtml(r.login_loja_express) : '<span style="opacity:.35">—</span>'}</td>
-        <td class="login-cell">${r.senha_loja_express ? escHtml(r.senha_loja_express) : '<span style="opacity:.35">—</span>'}</td>
-        <td>${escHtml(r.responsavel_tecnico || '—')}</td>
-        <td class="tel-cell">${r.telefone ? escHtml(r.telefone) : '<span style="opacity:.35">—</span>'}</td>
-        <td class="obs-cell" title="${escHtml(obs)}">${obsShort ? escHtml(obsShort) : '<span style="opacity:.25">—</span>'}</td>
+        <td data-label="Tipo">${badgeTipo(r.tipo)}</td>
+        <td data-label="Cliente"><strong>${escHtml(clienteDisplay(r))}</strong></td>
+        <td data-label="Loja">${escHtml(r.nome_loja || '—')}</td>
+        <td data-label="Inauguração" style="white-space:nowrap">${formatarData(r.data_inauguracao_real)}</td>
+        <td data-label="Dias Suporte">${renderDiasBadge(dias)}</td>
+        <td data-label="Servidor">${renderServidorBadge(r.servidor)}</td>
+        <td data-label="Login" class="login-cell">${r.login_loja_express ? escHtml(r.login_loja_express) : '<span style="opacity:.35">—</span>'}</td>
+        <td data-label="Senha" class="login-cell">${r.senha_loja_express ? escHtml(r.senha_loja_express) : '<span style="opacity:.35">—</span>'}</td>
+        <td data-label="Responsável">${escHtml(r.responsavel_tecnico || '—')}</td>
+        <td data-label="Telefone" class="tel-cell">${r.telefone ? escHtml(r.telefone) : '<span style="opacity:.35">—</span>'}</td>
+        <td data-label="Observação" class="obs-cell" title="${escHtml(obs)}">${obsShort ? escHtml(obsShort) : '<span style="opacity:.25">—</span>'}</td>
       `;
       tbody.appendChild(tr);
     });
@@ -974,9 +974,9 @@ function renderizarTabelaResponsaveis() {
     const tr = document.createElement('tr');
     const dt = r.created_at ? new Date(r.created_at).toLocaleDateString('pt-BR') : '—';
     tr.innerHTML = `
-      <td><strong>${escHtml(r.nome)}</strong></td>
-      <td style="opacity:.7">${dt}</td>
-      <td>
+      <td data-label="Nome"><strong>${escHtml(r.nome)}</strong></td>
+      <td data-label="Cadastrado em" style="opacity:.7">${dt}</td>
+      <td data-label="Ações">
         <div class="acoes-wrap">
           <button class="btn-icon" title="Editar" onclick="abrirModalEditarResp(${r.id})">
             <i data-lucide="pencil"></i>
