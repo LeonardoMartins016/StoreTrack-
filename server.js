@@ -50,6 +50,15 @@ async function initDB() {
       )
     `);
 
+    // Tabela de responsáveis técnicos
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS responsaveis_tecnicos (
+        id SERIAL PRIMARY KEY,
+        nome VARCHAR(255) NOT NULL UNIQUE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
     // Adiciona colunas de inauguração se não existirem (migração segura)
     const migracoes = [
       `ALTER TABLE implantacoes ADD COLUMN IF NOT EXISTS data_inauguracao_real VARCHAR(20)`,
@@ -387,6 +396,77 @@ app.delete('/api/implantacoes/:id', requireAuth, async (req, res) => {
     if (!existing) return res.status(404).json({ error: 'Registro não encontrado.' });
 
     await runWrite('DELETE FROM implantacoes WHERE id = ?', [id]);
+    res.json({ success: true, id: Number(id) });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────
+// CRUD /api/responsaveis — Responsáveis Técnicos
+// ─────────────────────────────────────────────────────────────────
+app.get('/api/responsaveis', requireAuth, async (req, res) => {
+  try {
+    const rows = await getAll('SELECT * FROM responsaveis_tecnicos ORDER BY nome ASC');
+    res.json(rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/responsaveis', requireAuth, async (req, res) => {
+  try {
+    const { nome } = req.body;
+    if (!nome || !nome.trim()) {
+      return res.status(400).json({ error: 'Nome é obrigatório.' });
+    }
+    const result = await runWrite(
+      'INSERT INTO responsaveis_tecnicos (nome) VALUES (?) RETURNING *',
+      [nome.trim()]
+    );
+    res.status(201).json(result.rows[0]);
+  } catch (err) {
+    if (err.code === '23505') {
+      return res.status(409).json({ error: 'Responsável já cadastrado.' });
+    }
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.put('/api/responsaveis/:id', requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { nome } = req.body;
+    if (!nome || !nome.trim()) {
+      return res.status(400).json({ error: 'Nome é obrigatório.' });
+    }
+    const existing = await getOne('SELECT * FROM responsaveis_tecnicos WHERE id = ?', [id]);
+    if (!existing) return res.status(404).json({ error: 'Responsável não encontrado.' });
+
+    const result = await runWrite(
+      'UPDATE responsaveis_tecnicos SET nome = ? WHERE id = ? RETURNING *',
+      [nome.trim(), id]
+    );
+    res.json(result.rows[0]);
+  } catch (err) {
+    if (err.code === '23505') {
+      return res.status(409).json({ error: 'Já existe um responsável com esse nome.' });
+    }
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete('/api/responsaveis/:id', requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const existing = await getOne('SELECT * FROM responsaveis_tecnicos WHERE id = ?', [id]);
+    if (!existing) return res.status(404).json({ error: 'Responsável não encontrado.' });
+
+    await runWrite('DELETE FROM responsaveis_tecnicos WHERE id = ?', [id]);
     res.json({ success: true, id: Number(id) });
   } catch (err) {
     console.error(err);

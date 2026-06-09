@@ -14,6 +14,11 @@ let deletingId      = null;
 let currentTipo     = 'escalada';
 let abaAtiva        = 'implantacoes';
 
+// Responsáveis técnicos
+let listaResponsaveis = [];
+let editingRespId     = null;
+let deletingRespId    = null;
+
 // ID pendente para inauguração (vindo do dropdown de status)
 let inaugurandoId   = null;
 
@@ -98,6 +103,7 @@ function fecharPortalDropdown() {
 document.addEventListener('DOMContentLoaded', () => {
   lucide.createIcons();
   iniciarRelogio();
+  carregarResponsaveis();
   carregarDados();
 
   // Carrega nome do usuário logado
@@ -150,6 +156,9 @@ function mudarAba(aba) {
 
   if (aba === 'suporte') {
     carregarSuporte();
+  }
+  if (aba === 'responsaveis') {
+    carregarResponsaveis();
   }
 }
 
@@ -259,6 +268,43 @@ function limparFiltros() {
     document.getElementById(id).value = '';
   });
   aplicarFiltros();
+}
+
+// ─── FILTRAR SEMANA (ao clicar no card) ──────────────────────────
+function filtrarSemana() {
+  // Garante que estamos na aba de implantações
+  if (abaAtiva !== 'implantacoes') {
+    mudarAba('implantacoes');
+  }
+
+  const hoje      = new Date();
+  const hojeSem   = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+  const diaSemana = hojeSem.getDay() === 0 ? 6 : hojeSem.getDay() - 1;
+  const segunda   = new Date(hojeSem);
+  segunda.setDate(hojeSem.getDate() - diaSemana);
+  const domingo   = new Date(segunda);
+  domingo.setDate(segunda.getDate() + 6);
+
+  const isoSeg = segunda.toISOString().slice(0, 10);
+  const isoDom = domingo.toISOString().slice(0, 10);
+
+  // Limpa outros filtros
+  ['f-cliente', 'f-loja', 'f-responsavel'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  ['f-tipo', 'f-status'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+
+  // Seta o filtro de período da semana
+  document.getElementById('f-data-de').value  = isoSeg;
+  document.getElementById('f-data-ate').value = isoDom;
+
+  aplicarFiltros();
+  showToast(`📅 Filtrando inaugurações da semana (${formatarData(isoSeg)} a ${formatarData(isoDom)})`, 'info');
+
+  // Scroll suave até os filtros
+  document.querySelector('.filters-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function limparFiltrosSuporte() {
@@ -528,6 +574,7 @@ function abrirModalCadastro() {
   document.getElementById('form-cadastro').reset();
   document.getElementById('edit-id').value = '';
   selecionarTipo('escalada');
+  popularSelectResponsaveis();
   abrirModal('modal-cadastro');
 }
 
@@ -540,13 +587,13 @@ async function abrirModalEdicao(id) {
   document.getElementById('edit-id').value = id;
 
   selecionarTipo(r.tipo);
+  popularSelectResponsaveis(r.responsavel_tecnico);
 
   document.getElementById('nome-cliente').value         = r.nome_cliente        || '';
   document.getElementById('nome-cliente-antigo').value  = r.nome_cliente_antigo || '';
   document.getElementById('nome-cliente-novo').value    = r.nome_cliente_novo   || '';
   document.getElementById('nome-loja').value            = r.nome_loja           || '';
   document.getElementById('data-inauguracao').value     = r.data_inauguracao    || '';
-  document.getElementById('responsavel-tecnico').value  = r.responsavel_tecnico || '';
   document.getElementById('telefone').value             = r.telefone            || '';
   document.getElementById('status-form').value          = r.status              || 'parado';
   document.getElementById('observacao').value           = r.observacao          || '';
@@ -860,4 +907,173 @@ function showToast(msg, type = 'info') {
     el.classList.add('toast-out');
     setTimeout(() => el.remove(), 280);
   }, 3500);
+}
+
+// ─── RESPONSÁVEIS TÉCNICOS ───────────────────────────────────────
+function popularSelectResponsaveis(valorAtual) {
+  const sel = document.getElementById('responsavel-tecnico');
+  sel.innerHTML = '<option value="">Selecione o responsável...</option>';
+  listaResponsaveis.forEach(r => {
+    const opt = document.createElement('option');
+    opt.value = r.nome;
+    opt.textContent = r.nome;
+    sel.appendChild(opt);
+  });
+  if (valorAtual) {
+    // Se o valor atual não estiver na lista (legado), adiciona como opção
+    const existe = listaResponsaveis.some(r => r.nome === valorAtual);
+    if (!existe) {
+      const opt = document.createElement('option');
+      opt.value = valorAtual;
+      opt.textContent = `${valorAtual} (não cadastrado)`;
+      sel.appendChild(opt);
+    }
+    sel.value = valorAtual;
+  }
+}
+
+async function carregarResponsaveis() {
+  try {
+    listaResponsaveis = await api('GET', '/api/responsaveis');
+    renderizarTabelaResponsaveis();
+  } catch (e) {
+    // silencioso na primeira carga
+    console.error('Erro ao carregar responsáveis:', e);
+  }
+}
+
+function renderizarTabelaResponsaveis() {
+  const tbody   = document.getElementById('resp-table-body');
+  const counter = document.getElementById('resp-table-counter');
+  if (!tbody || !counter) return;
+
+  const n = listaResponsaveis.length;
+  counter.innerHTML = `<span>${n}</span> responsáve${n !== 1 ? 'is' : 'l'} cadastrado${n !== 1 ? 's' : ''}`;
+
+  if (n === 0) {
+    tbody.innerHTML = `
+      <tr class="empty-row">
+        <td colspan="3">
+          <div class="empty-state">
+            <i data-lucide="user-x" class="empty-icon"></i>
+            <p>Nenhum responsável cadastrado</p>
+            <p style="font-size:11px;margin-top:4px;opacity:.5">Clique em "Novo Responsável" para adicionar</p>
+          </div>
+        </td>
+      </tr>`;
+    lucide.createIcons();
+    return;
+  }
+
+  tbody.innerHTML = '';
+  listaResponsaveis.forEach(r => {
+    const tr = document.createElement('tr');
+    const dt = r.created_at ? new Date(r.created_at).toLocaleDateString('pt-BR') : '—';
+    tr.innerHTML = `
+      <td><strong>${escHtml(r.nome)}</strong></td>
+      <td style="opacity:.7">${dt}</td>
+      <td>
+        <div class="acoes-wrap">
+          <button class="btn-icon" title="Editar" onclick="abrirModalEditarResp(${r.id})">
+            <i data-lucide="pencil"></i>
+          </button>
+          <button class="btn-icon danger" title="Excluir" onclick="abrirModalExcluirResp(${r.id})">
+            <i data-lucide="trash-2"></i>
+          </button>
+        </div>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+  lucide.createIcons();
+}
+
+function abrirModalResponsavel() {
+  editingRespId = null;
+  document.getElementById('modal-resp-title').textContent = 'Novo Responsável';
+  document.getElementById('form-responsavel').reset();
+  document.getElementById('resp-edit-id').value = '';
+  abrirModal('modal-responsavel');
+}
+
+function abrirModalEditarResp(id) {
+  const r = listaResponsaveis.find(x => x.id === id);
+  if (!r) return;
+  editingRespId = id;
+  document.getElementById('modal-resp-title').textContent = 'Editar Responsável';
+  document.getElementById('resp-edit-id').value = id;
+  document.getElementById('resp-nome').value = r.nome;
+  abrirModal('modal-responsavel');
+}
+
+function fecharModalResponsavel() {
+  editingRespId = null;
+  fecharModal('modal-responsavel');
+}
+
+async function salvarResponsavel() {
+  const nome = document.getElementById('resp-nome').value.trim();
+  if (!nome) {
+    document.getElementById('resp-nome').classList.add('error');
+    showToast('Preencha o nome do responsável.', 'error');
+    return;
+  }
+  document.getElementById('resp-nome').classList.remove('error');
+
+  const btn = document.getElementById('btn-salvar-resp');
+  btn.disabled = true;
+  btn.innerHTML = '<i data-lucide="loader-2" class="spinning"></i> Salvando...';
+  lucide.createIcons();
+
+  try {
+    if (editingRespId) {
+      await api('PUT', `/api/responsaveis/${editingRespId}`, { nome });
+      showToast('Responsável atualizado com sucesso!', 'success');
+    } else {
+      await api('POST', '/api/responsaveis', { nome });
+      showToast('Responsável cadastrado com sucesso!', 'success');
+    }
+    await carregarResponsaveis();
+    fecharModalResponsavel();
+  } catch (e) {
+    showToast('Erro: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i data-lucide="save"></i> Salvar';
+    lucide.createIcons();
+  }
+}
+
+function abrirModalExcluirResp(id) {
+  deletingRespId = id;
+  const r = listaResponsaveis.find(x => x.id === id);
+  document.getElementById('delete-resp-name').textContent = r ? r.nome : '';
+  abrirModal('modal-excluir-resp');
+}
+
+function fecharModalExcluirResp() {
+  deletingRespId = null;
+  fecharModal('modal-excluir-resp');
+}
+
+async function confirmarExclusaoResp() {
+  if (!deletingRespId) return;
+
+  const btn = document.getElementById('btn-confirmar-excluir-resp');
+  btn.disabled = true;
+  btn.innerHTML = '<i data-lucide="loader-2" class="spinning"></i> Excluindo...';
+  lucide.createIcons();
+
+  try {
+    await api('DELETE', `/api/responsaveis/${deletingRespId}`);
+    await carregarResponsaveis();
+    fecharModalExcluirResp();
+    showToast('Responsável excluído com sucesso.', 'info');
+  } catch (e) {
+    showToast('Erro ao excluir: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i data-lucide="trash-2"></i> Excluir';
+    lucide.createIcons();
+  }
 }

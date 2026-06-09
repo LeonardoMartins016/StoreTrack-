@@ -72,6 +72,10 @@
       Clientes no Suporte
       <span class="tab-badge" id="tab-badge-suporte"></span>
     </button>
+    <button class="tab-btn" id="tab-btn-responsaveis" onclick="mudarAba('responsaveis')">
+      <i data-lucide="users"></i>
+      Responsáveis Técnicos
+    </button>
   </nav>
 
   <!-- ═══════════════════════════ MAIN ═══════════════════════════ -->
@@ -104,7 +108,7 @@
           <div class="card-glow card-glow-blue"></div>
         </div>
 
-        <div class="summary-card" id="card-semana">
+        <div class="summary-card summary-card-clickable" id="card-semana" onclick="filtrarSemana()" title="Clique para filtrar inaugurações da semana">
           <div class="card-icon-wrap card-icon-purple">
             <i data-lucide="calendar-days"></i>
           </div>
@@ -325,6 +329,55 @@
       </section>
     </div><!-- /aba-suporte -->
 
+    <!-- ══════════════ ABA RESPONSÁVEIS ══════════════ -->
+    <div id="aba-responsaveis" class="tab-content">
+
+      <!-- Cabeçalho -->
+      <section class="suporte-header-panel">
+        <div class="suporte-header-info">
+          <div class="suporte-icon-wrap" style="background:linear-gradient(135deg,#6366f1,#818cf8)">
+            <i data-lucide="users"></i>
+          </div>
+          <div>
+            <h2 class="suporte-title">Responsáveis Técnicos</h2>
+            <p class="suporte-subtitle">Gerencie os nomes dos responsáveis que aparecem nos cadastros</p>
+          </div>
+        </div>
+        <button class="btn-primary" onclick="abrirModalResponsavel()">
+          <i data-lucide="user-plus"></i>
+          Novo Responsável
+        </button>
+      </section>
+
+      <!-- Lista -->
+      <section class="table-panel">
+        <div class="table-header">
+          <span class="table-counter" id="resp-table-counter">Carregando...</span>
+        </div>
+        <div class="table-wrapper">
+          <table class="main-table" id="resp-table">
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>Cadastrado em</th>
+                <th style="width:120px">Ações</th>
+              </tr>
+            </thead>
+            <tbody id="resp-table-body">
+              <tr class="empty-row">
+                <td colspan="3">
+                  <div class="empty-state">
+                    <i data-lucide="loader-2" class="empty-icon spinning"></i>
+                    <p>Carregando...</p>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div><!-- /aba-responsaveis -->
+
   </main>
 
   <!-- ═══════════════════════ MODAL CADASTRO ═══════════════════════ -->
@@ -401,7 +454,9 @@
               <label class="form-label" for="responsavel-tecnico">
                 Responsável Técnico <span class="required">*</span>
               </label>
-              <input type="text" id="responsavel-tecnico" class="form-input" placeholder="Nome do responsável" />
+              <select id="responsavel-tecnico" class="form-input">
+                <option value="">Selecione o responsável...</option>
+              </select>
             </div>
           </div>
 
@@ -544,6 +599,63 @@
         <button type="button" class="btn-inaugurar" id="btn-confirmar-inauguracao" onclick="confirmarInauguracao()">
           <i data-lucide="rocket"></i>
           Confirmar Inauguração
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ MODAL RESPONSÁVEL ═══════════════════════ -->
+  <div id="modal-responsavel" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-resp-title">
+    <div class="modal-box modal-box-sm">
+      <div class="modal-header">
+        <h2 class="modal-title" id="modal-resp-title">Novo Responsável</h2>
+        <button class="modal-close" onclick="fecharModalResponsavel()" aria-label="Fechar">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form id="form-responsavel" novalidate>
+          <input type="hidden" id="resp-edit-id" />
+          <div class="form-group">
+            <label class="form-label" for="resp-nome">
+              Nome do Responsável <span class="required">*</span>
+            </label>
+            <input type="text" id="resp-nome" class="form-input" placeholder="Digite o nome completo" />
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-ghost" onclick="fecharModalResponsavel()">Cancelar</button>
+        <button type="button" class="btn-primary" id="btn-salvar-resp" onclick="salvarResponsavel()">
+          <i data-lucide="save"></i>
+          Salvar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ MODAL EXCLUIR RESPONSÁVEL ═══════════════════════ -->
+  <div id="modal-excluir-resp" class="modal-overlay" role="dialog" aria-modal="true">
+    <div class="modal-box modal-box-sm">
+      <div class="modal-header">
+        <h2 class="modal-title">Confirmar Exclusão</h2>
+        <button class="modal-close" onclick="fecharModalExcluirResp()" aria-label="Fechar">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="delete-confirm-icon">
+          <i data-lucide="trash-2"></i>
+        </div>
+        <p class="delete-confirm-text">Tem certeza que deseja excluir este responsável?</p>
+        <p class="delete-confirm-subtext" id="delete-resp-name"></p>
+        <p class="delete-warning">Esta ação não pode ser desfeita.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-ghost" onclick="fecharModalExcluirResp()">Cancelar</button>
+        <button type="button" class="btn-danger" id="btn-confirmar-excluir-resp" onclick="confirmarExclusaoResp()">
+          <i data-lucide="trash-2"></i>
+          Excluir
         </button>
       </div>
     </div>

@@ -320,6 +320,28 @@ body {
 }
 .summary-card:hover { border-color: rgba(249,115,22,.3); transform: translateY(-2px); box-shadow: var(--shadow-card); }
 
+.summary-card-clickable { cursor: pointer; }
+.summary-card-clickable:hover {
+  border-color: rgba(167,139,250,.5);
+  box-shadow: 0 4px 24px rgba(167,139,250,.25), var(--shadow-card);
+  transform: translateY(-3px);
+}
+.summary-card-clickable:active { transform: translateY(-1px); }
+.summary-card-clickable::after {
+  content: 'Clique para filtrar';
+  position: absolute;
+  bottom: 6px;
+  right: 12px;
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: rgba(167,139,250,.6);
+  opacity: 0;
+  transition: opacity .2s ease;
+}
+.summary-card-clickable:hover::after { opacity: 1; }
+
 .card-icon-wrap {
   width: 52px;
   height: 52px;
