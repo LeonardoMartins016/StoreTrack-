@@ -364,17 +364,19 @@
                 <th>Loja</th>
                 <th>Data de Inauguração</th>
                 <th>Dias no Suporte</th>
+                <th>Cupom Fiscal</th>
                 <th>Servidor</th>
                 <th>Login Loja Express</th>
                 <th>Senha Loja Express</th>
                 <th>Responsável</th>
                 <th>Telefone</th>
                 <th>Observação</th>
+                <th>Ações</th>
               </tr>
             </thead>
             <tbody id="suporte-table-body">
               <tr class="empty-row">
-                <td colspan="11">
+                <td colspan="14">
                   <div class="empty-state">
                     <i data-lucide="loader-2" class="empty-icon spinning"></i>
                     <p>Carregando...</p>
@@ -738,6 +740,49 @@
         <button type="button" class="btn-danger" id="btn-confirmar-excluir-resp" onclick="confirmarExclusaoResp()">
           <i data-lucide="trash-2"></i>
           Excluir
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ MODAL TREINAMENTOS ═══════════════════════ -->
+  <div id="modal-treinamentos" class="modal-overlay" role="dialog" aria-modal="true">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h2 class="modal-title">Gerenciar Treinamentos</h2>
+        <button class="modal-close" onclick="fecharModalTreinamentos()" aria-label="Fechar">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="treinamento-implantacao-id" />
+        
+        <div class="form-group" style="display:flex; gap:10px; align-items:flex-end;">
+          <div style="flex:1">
+            <label class="form-label" for="qtde-treinamentos">Quantidade de Treinamentos</label>
+            <input type="number" id="qtde-treinamentos" class="form-input" min="0" placeholder="Ex: 3" />
+          </div>
+          <button type="button" class="btn-primary" onclick="gerarCamposTreinamentos()">
+            <i data-lucide="list-plus"></i> Gerar Campos
+          </button>
+        </div>
+
+        <div id="treinamentos-container" style="margin-top:20px; display:flex; flex-direction:column; gap:15px;">
+          <!-- Campos dinâmicos vão aqui -->
+        </div>
+
+        <div style="margin-top:15px;">
+          <button type="button" class="btn-ghost" onclick="adicionarUmTreinamento()" style="width:100%; justify-content:center;">
+            <i data-lucide="plus"></i> Adicionar Mais Um
+          </button>
+        </div>
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-ghost" onclick="fecharModalTreinamentos()">Cancelar</button>
+        <button type="button" class="btn-primary" id="btn-salvar-treinamentos" onclick="salvarTreinamentos()">
+          <i data-lucide="save"></i>
+          Salvar Treinamentos
         </button>
       </div>
     </div>

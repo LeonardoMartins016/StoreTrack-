@@ -400,6 +400,10 @@ function renderizarTabela() {
       <td data-label="Observação" class="obs-cell" title="${escHtml(obs)}">${obsShort ? escHtml(obsShort) : '<span style="opacity:.25">—</span>'}</td>
       <td data-label="Ações">
         <div class="acoes-wrap">
+          ${(r.tipo === 'cliente_novo' || r.tipo === 'troca_titularidade') ? 
+            `<button class="btn-icon" title="Treinamentos" onclick="abrirModalTreinamentos(${r.id})">
+               <i data-lucide="graduation-cap"></i>
+             </button>` : ''}
           <button class="btn-icon" title="Editar" onclick="abrirModalEdicao(${r.id})">
             <i data-lucide="pencil"></i>
           </button>
@@ -849,12 +853,21 @@ async function carregarSuporte() {
         <td data-label="Loja">${escHtml(r.nome_loja || '—')}</td>
         <td data-label="Inauguração" style="white-space:nowrap">${formatarData(r.data_inauguracao_real)}</td>
         <td data-label="Dias Suporte">${renderDiasBadge(dias)}</td>
+        <td data-label="Cupom Fiscal">${escHtml(r.emite_cupom_fiscal || '—')}</td>
         <td data-label="Servidor">${renderServidorBadge(r.servidor)}</td>
         <td data-label="Login" class="login-cell">${r.login_loja_express ? escHtml(r.login_loja_express) : '<span style="opacity:.35">—</span>'}</td>
         <td data-label="Senha" class="login-cell">${r.senha_loja_express ? escHtml(r.senha_loja_express) : '<span style="opacity:.35">—</span>'}</td>
         <td data-label="Responsável">${escHtml(r.responsavel_tecnico || '—')}</td>
         <td data-label="Telefone" class="tel-cell">${r.telefone ? escHtml(r.telefone) : '<span style="opacity:.35">—</span>'}</td>
         <td data-label="Observação" class="obs-cell" title="${escHtml(obs)}">${obsShort ? escHtml(obsShort) : '<span style="opacity:.25">—</span>'}</td>
+        <td data-label="Ações">
+          <div class="acoes-wrap">
+            ${(r.tipo === 'cliente_novo' || r.tipo === 'troca_titularidade') ? 
+              `<button class="btn-icon" title="Treinamentos" onclick="abrirModalTreinamentos(${r.id})">
+                 <i data-lucide="graduation-cap"></i>
+               </button>` : '<span style="opacity:.35">—</span>'}
+          </div>
+        </td>
       `;
       tbody.appendChild(tr);
     });
@@ -1349,3 +1362,111 @@ function exportarPdf(dados, nomeArquivo, titulo) {
     showToast('Erro ao exportar PDF: ' + e.message, 'error');
   }
 }
+
+// ─── TREINAMENTOS ────────────────────────────────────────────────
+let treinamentosAtuais = [];
+
+async function abrirModalTreinamentos(id) {
+  document.getElementById('treinamento-implantacao-id').value = id;
+  const container = document.getElementById('treinamentos-container');
+  container.innerHTML = '<div style="text-align:center; padding:20px;"><i data-lucide="loader-2" class="spinning"></i> Carregando...</div>';
+  document.getElementById('qtde-treinamentos').value = '';
+  
+  abrirModal('modal-treinamentos');
+
+  try {
+    const treinamentos = await api('GET', `/api/implantacoes/${id}/treinamentos`);
+    treinamentosAtuais = treinamentos || [];
+    document.getElementById('qtde-treinamentos').value = treinamentosAtuais.length;
+    renderizarCamposTreinamentos();
+  } catch (e) {
+    container.innerHTML = `<div class="error" style="color:red; text-align:center;">Erro ao carregar: ${e.message}</div>`;
+  }
+}
+
+function fecharModalTreinamentos() {
+  fecharModal('modal-treinamentos');
+}
+
+function gerarCamposTreinamentos() {
+  const qtde = parseInt(document.getElementById('qtde-treinamentos').value) || 0;
+  // Mantém os existentes até o limite da quantidade, adiciona vazios se necessário
+  if (qtde < treinamentosAtuais.length) {
+    treinamentosAtuais = treinamentosAtuais.slice(0, qtde);
+  } else {
+    while (treinamentosAtuais.length < qtde) {
+      treinamentosAtuais.push({ tema: '', link: '' });
+    }
+  }
+  renderizarCamposTreinamentos();
+}
+
+function adicionarUmTreinamento() {
+  treinamentosAtuais.push({ tema: '', link: '' });
+  document.getElementById('qtde-treinamentos').value = treinamentosAtuais.length;
+  renderizarCamposTreinamentos();
+}
+
+function removerTreinamento(index) {
+  treinamentosAtuais.splice(index, 1);
+  document.getElementById('qtde-treinamentos').value = treinamentosAtuais.length;
+  renderizarCamposTreinamentos();
+}
+
+function renderizarCamposTreinamentos() {
+  const container = document.getElementById('treinamentos-container');
+  container.innerHTML = '';
+  
+  if (treinamentosAtuais.length === 0) {
+    container.innerHTML = '<p style="text-align:center; opacity:0.5; font-size:14px;">Nenhum treinamento adicionado.</p>';
+    return;
+  }
+
+  treinamentosAtuais.forEach((t, i) => {
+    const div = document.createElement('div');
+    div.style.cssText = 'border:1px solid var(--border-color); padding:15px; border-radius:8px; position:relative; background:var(--bg-lighter);';
+    div.innerHTML = `
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+        <strong style="font-size:14px; color:var(--text-color);">Treinamento ${i + 1}</strong>
+        <button type="button" class="btn-icon danger" style="padding:4px;" onclick="removerTreinamento(${i})" title="Remover">
+          <i data-lucide="trash-2"></i>
+        </button>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Tema do treinamento</label>
+        <input type="text" class="form-input" value="${escHtml(t.tema)}" oninput="treinamentosAtuais[${i}].tema = this.value" placeholder="Qual foi o tema?" />
+      </div>
+      <div class="form-group" style="margin-bottom:0;">
+        <label class="form-label">Link do treinamento</label>
+        <input type="url" class="form-input" value="${escHtml(t.link)}" oninput="treinamentosAtuais[${i}].link = this.value" placeholder="https://..." />
+      </div>
+    `;
+    container.appendChild(div);
+  });
+  lucide.createIcons();
+}
+
+async function salvarTreinamentos() {
+  const id = document.getElementById('treinamento-implantacao-id').value;
+  const btn = document.getElementById('btn-salvar-treinamentos');
+  
+  // Limpa treinamentos completamente em branco antes de salvar
+  const validos = treinamentosAtuais.filter(t => t.tema.trim() || t.link.trim());
+  
+  btn.disabled = true;
+  btn.innerHTML = '<i data-lucide="loader-2" class="spinning"></i> Salvando...';
+  lucide.createIcons();
+
+  try {
+    await api('PUT', `/api/implantacoes/${id}/treinamentos`, { treinamentos: validos });
+    showToast('Treinamentos salvos com sucesso!', 'success');
+    fecharModalTreinamentos();
+  } catch (e) {
+    showToast('Erro ao salvar treinamentos: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i data-lucide="save"></i> Salvar Treinamentos';
+    lucide.createIcons();
+  }
+}
+

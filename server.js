@@ -67,6 +67,7 @@ async function initDB() {
       `ALTER TABLE implantacoes ADD COLUMN IF NOT EXISTS senha_loja_express VARCHAR(255)`,
       `ALTER TABLE implantacoes ADD COLUMN IF NOT EXISTS emite_cupom_fiscal VARCHAR(10)`,
       `ALTER TABLE implantacoes ADD COLUMN IF NOT EXISTS abriu_chamado_teste BOOLEAN DEFAULT FALSE`,
+      `ALTER TABLE implantacoes ADD COLUMN IF NOT EXISTS treinamentos JSONB DEFAULT '[]'::jsonb`,
     ];
     for (const sql of migracoes) {
       await client.query(sql);
@@ -351,6 +352,50 @@ app.patch('/api/implantacoes/:id/inaugurar', requireAuth, async (req, res) => {
   }
 });
 
+// ─────────────────────────────────────────────────────────────────
+// GET /api/implantacoes/:id/treinamentos
+// ─────────────────────────────────────────────────────────────────
+app.get('/api/implantacoes/:id/treinamentos', requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const existing = await getOne('SELECT treinamentos FROM implantacoes WHERE id = ?', [id]);
+    if (!existing) return res.status(404).json({ error: 'Registro não encontrado.' });
+
+    res.json(existing.treinamentos || []);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────
+// PUT /api/implantacoes/:id/treinamentos
+// ─────────────────────────────────────────────────────────────────
+app.put('/api/implantacoes/:id/treinamentos', requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { treinamentos } = req.body; // Expects an array
+
+    if (!Array.isArray(treinamentos)) {
+      return res.status(400).json({ error: 'Treinamentos deve ser um array.' });
+    }
+
+    const existing = await getOne('SELECT * FROM implantacoes WHERE id = ?', [id]);
+    if (!existing) return res.status(404).json({ error: 'Registro não encontrado.' });
+
+    const result = await runWrite(`
+      UPDATE implantacoes
+      SET treinamentos = ?, updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+      RETURNING *
+    `, [JSON.stringify(treinamentos), id]);
+
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // ─────────────────────────────────────────────────────────────────
 // GET /api/suporte
