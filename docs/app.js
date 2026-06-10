@@ -813,15 +813,6 @@ async function carregarSuporte() {
   try {
     const rows = await api('GET', `/api/suporte?${params.toString()}`);
 
-    // Atualiza badge da aba
-    const badge = document.getElementById('tab-badge-suporte');
-    if (rows.length > 0) {
-      badge.textContent = rows.length;
-      badge.style.display = 'inline-flex';
-    } else {
-      badge.style.display = 'none';
-    }
-
     // Atualiza contadores
     document.getElementById('suporte-count').textContent = rows.length;
     counter.innerHTML = `<span>${rows.length}</span> cliente${rows.length !== 1 ? 's' : ''} no suporte`;
@@ -829,7 +820,7 @@ async function carregarSuporte() {
     if (rows.length === 0) {
       tbody.innerHTML = `
         <tr class="empty-row">
-          <td colspan="11">
+          <td colspan="7">
             <div class="empty-state">
               <i data-lucide="check-circle-2" class="empty-icon" style="color:var(--status-ok);opacity:.5"></i>
               <p>Nenhum cliente elegível para suporte ainda</p>
@@ -853,19 +844,22 @@ async function carregarSuporte() {
         <td data-label="Loja">${escHtml(r.nome_loja || '—')}</td>
         <td data-label="Inauguração" style="white-space:nowrap">${formatarData(r.data_inauguracao_real)}</td>
         <td data-label="Dias Suporte">${renderDiasBadge(dias)}</td>
-        <td data-label="Cupom Fiscal">${escHtml(r.emite_cupom_fiscal || '—')}</td>
-        <td data-label="Servidor">${renderServidorBadge(r.servidor)}</td>
-        <td data-label="Login" class="login-cell">${r.login_loja_express ? escHtml(r.login_loja_express) : '<span style="opacity:.35">—</span>'}</td>
-        <td data-label="Senha" class="login-cell">${r.senha_loja_express ? escHtml(r.senha_loja_express) : '<span style="opacity:.35">—</span>'}</td>
         <td data-label="Responsável">${escHtml(r.responsavel_tecnico || '—')}</td>
-        <td data-label="Telefone" class="tel-cell">${r.telefone ? escHtml(r.telefone) : '<span style="opacity:.35">—</span>'}</td>
-        <td data-label="Observação" class="obs-cell" title="${escHtml(obs)}">${obsShort ? escHtml(obsShort) : '<span style="opacity:.25">—</span>'}</td>
         <td data-label="Ações">
           <div class="acoes-wrap">
+            <button class="btn-icon" title="Informações Adicionais" onclick='abrirModalInfoSuporte(${JSON.stringify(r).replace(/'/g, "&#39;")})'>
+              <i data-lucide="info"></i>
+            </button>
             ${(r.tipo === 'cliente_novo' || r.tipo === 'troca_titularidade') ? 
               `<button class="btn-icon" title="Treinamentos" onclick="abrirModalTreinamentos(${r.id})">
                  <i data-lucide="graduation-cap"></i>
-               </button>` : '<span style="opacity:.35">—</span>'}
+               </button>` : ''}
+            <button class="btn-icon" title="Editar" onclick="abrirModalEdicao(${r.id})">
+              <i data-lucide="pencil"></i>
+            </button>
+            <button class="btn-icon danger" title="Excluir" onclick="abrirModalExcluir(${r.id})">
+              <i data-lucide="trash-2"></i>
+            </button>
           </div>
         </td>
       `;
@@ -876,7 +870,7 @@ async function carregarSuporte() {
   } catch (e) {
     tbody.innerHTML = `
       <tr class="empty-row">
-        <td colspan="11">
+        <td colspan="7">
           <div class="empty-state">
             <i data-lucide="alert-circle" class="empty-icon" style="color:var(--status-parado)"></i>
             <p>Erro ao carregar: ${escHtml(e.message)}</p>
@@ -1468,5 +1462,21 @@ async function salvarTreinamentos() {
     btn.innerHTML = '<i data-lucide="save"></i> Salvar Treinamentos';
     lucide.createIcons();
   }
+}
+
+// ─── INFO MODAL (SUPORTE) ────────────────────────────────────────
+function abrirModalInfoSuporte(r) {
+  document.getElementById('info-servidor').innerHTML = renderServidorBadge(r.servidor);
+  document.getElementById('info-cupom').textContent = r.emite_cupom_fiscal || 'Não informado';
+  document.getElementById('info-login').textContent = r.login_loja_express || '—';
+  document.getElementById('info-senha').textContent = r.senha_loja_express || '—';
+  document.getElementById('info-telefone').textContent = r.telefone || '—';
+  document.getElementById('info-observacao').textContent = r.observacao || 'Nenhuma observação.';
+  
+  abrirModal('modal-info-suporte');
+}
+
+function fecharModalInfoSuporte() {
+  fecharModal('modal-info-suporte');
 }
 

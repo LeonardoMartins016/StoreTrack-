@@ -75,7 +75,6 @@
     <button class="tab-btn" id="tab-btn-suporte" onclick="mudarAba('suporte')">
       <i data-lucide="headphones"></i>
       Clientes no Suporte
-      <span class="tab-badge" id="tab-badge-suporte"></span>
     </button>
     <button class="tab-btn" id="tab-btn-responsaveis" onclick="mudarAba('responsaveis')">
       <i data-lucide="users"></i>
@@ -364,13 +363,7 @@
                 <th>Loja</th>
                 <th>Data de Inauguração</th>
                 <th>Dias no Suporte</th>
-                <th>Cupom Fiscal</th>
-                <th>Servidor</th>
-                <th>Login Loja Express</th>
-                <th>Senha Loja Express</th>
                 <th>Responsável</th>
-                <th>Telefone</th>
-                <th>Observação</th>
                 <th>Ações</th>
               </tr>
             </thead>
@@ -783,6 +776,38 @@
         <button type="button" class="btn-primary" id="btn-salvar-treinamentos" onclick="salvarTreinamentos()">
           <i data-lucide="save"></i>
           Salvar Treinamentos
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ MODAL INFORMAÇÕES DO CLIENTE (SUPORTE) ═══════════════════════ -->
+  <div id="modal-info-suporte" class="modal-overlay" role="dialog" aria-modal="true">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h2 class="modal-title">Informações do Cliente</h2>
+        <button class="modal-close" onclick="fecharModalInfoSuporte()" aria-label="Fechar">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+      <div class="modal-body" style="display:flex; flex-direction:column; gap:15px;">
+        <div style="background:var(--bg-lighter); padding:15px; border-radius:8px; border:1px solid var(--border-color);">
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
+            <div><strong style="color:var(--text-color); font-size:12px; text-transform:uppercase;">Servidor</strong><br/><span id="info-servidor"></span></div>
+            <div><strong style="color:var(--text-color); font-size:12px; text-transform:uppercase;">Cupom Fiscal</strong><br/><span id="info-cupom"></span></div>
+            <div><strong style="color:var(--text-color); font-size:12px; text-transform:uppercase;">Login Loja Express</strong><br/><span id="info-login"></span></div>
+            <div><strong style="color:var(--text-color); font-size:12px; text-transform:uppercase;">Senha Loja Express</strong><br/><span id="info-senha"></span></div>
+            <div><strong style="color:var(--text-color); font-size:12px; text-transform:uppercase;">Telefone</strong><br/><span id="info-telefone"></span></div>
+          </div>
+          <div style="margin-top:15px;">
+            <strong style="color:var(--text-color); font-size:12px; text-transform:uppercase;">Observação</strong><br/>
+            <div id="info-observacao" style="background:#fff; padding:10px; border-radius:6px; border:1px solid #e2e8f0; min-height:50px; font-size:14px;"></div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-primary" onclick="fecharModalInfoSuporte()">
+          Fechar
         </button>
       </div>
     </div>
