@@ -258,6 +258,13 @@ function aplicarFiltros() {
     if (fTipo   && r.tipo !== fTipo)                                                 return false;
     if (fResp   && !(r.responsavel_tecnico || '').toLowerCase().includes(fResp))   return false;
     if (fStatus && r.status !== fStatus)                                             return false;
+    
+    // Clientes inaugurados há mais de 15 dias não devem aparecer na tela de Implantações
+    if (r.status === 'inaugurado' && (r.data_inauguracao_real || r.data_inauguracao)) {
+      const dias = diasDesde(r.data_inauguracao_real || r.data_inauguracao);
+      if (dias >= 15) return false;
+    }
+    
     return true;
   });
 
@@ -494,10 +501,13 @@ function abrirModalInauguracao(id) {
   document.getElementById('inaug-cliente-display').textContent = clienteDisplay(r);
 
   // Preenche com dados existentes se já inaugurado antes
-  document.getElementById('inaug-data').value          = r.data_inauguracao_real || r.data_inauguracao || '';
+  document.getElementById('inaug-data').value          = r.data_inauguracao || ''; // Sincroniza a data
   document.getElementById('inaug-servidor').value      = r.servidor              || '';
   document.getElementById('inaug-login').value         = r.login_loja_express    || '';
   document.getElementById('inaug-senha').value         = r.senha_loja_express    || '';
+  document.getElementById('inaug-telefone').value      = r.telefone              || '';
+  document.getElementById('inaug-cupom').value         = r.emite_cupom_fiscal    || '';
+  document.getElementById('inaug-chamado').checked     = !!r.abriu_chamado_teste;
   document.getElementById('inaug-observacao').value    = r.observacao            || '';
 
   abrirModal('modal-inauguracao');
@@ -514,21 +524,27 @@ async function confirmarInauguracao() {
   const servidor= document.getElementById('inaug-servidor').value;
   const login   = document.getElementById('inaug-login').value.trim();
   const senha   = document.getElementById('inaug-senha').value.trim();
+  const telefone= document.getElementById('inaug-telefone').value.trim();
+  const cupom   = document.getElementById('inaug-cupom').value;
+  const chamado = document.getElementById('inaug-chamado').checked;
 
   // Validação
   let ok = true;
-  if (!data) {
-    document.getElementById('inaug-data').classList.add('error');
-    ok = false;
-  } else {
-    document.getElementById('inaug-data').classList.remove('error');
-  }
-  if (!servidor) {
-    document.getElementById('inaug-servidor').classList.add('error');
-    ok = false;
-  } else {
-    document.getElementById('inaug-servidor').classList.remove('error');
-  }
+  const checkRequired = (fieldId, val) => {
+    if (!val) {
+      document.getElementById(fieldId).classList.add('error');
+      ok = false;
+    } else {
+      document.getElementById(fieldId).classList.remove('error');
+    }
+  };
+
+  checkRequired('inaug-data', data);
+  checkRequired('inaug-servidor', servidor);
+  checkRequired('inaug-login', login);
+  checkRequired('inaug-senha', senha);
+  checkRequired('inaug-telefone', telefone);
+  checkRequired('inaug-cupom', cupom);
 
   if (!ok) {
     showToast('Preencha os campos obrigatórios.', 'error');
@@ -544,8 +560,11 @@ async function confirmarInauguracao() {
     const updated = await api('PATCH', `/api/implantacoes/${id}/inaugurar`, {
       data_inauguracao_real: data,
       servidor,
-      login_loja_express: login || null,
-      senha_loja_express: senha || null,
+      login_loja_express: login,
+      senha_loja_express: senha,
+      telefone,
+      emite_cupom_fiscal: cupom,
+      abriu_chamado_teste: chamado,
       observacao: document.getElementById('inaug-observacao').value.trim() || null,
     });
 
@@ -579,6 +598,14 @@ function abrirModalCadastro() {
   document.getElementById('modal-title').textContent = 'Novo Cadastro';
   document.getElementById('form-cadastro').reset();
   document.getElementById('edit-id').value = '';
+  
+  // Bloquear opção de Inaugurado no cadastro novo
+  const optInaugurado = document.querySelector('#status-form option[value="inaugurado"]');
+  if (optInaugurado) {
+    optInaugurado.disabled = true;
+    optInaugurado.textContent = '🟢 Inaugurado (use botão da tabela)';
+  }
+
   selecionarTipo('escalada');
   popularSelectResponsaveis();
   abrirModal('modal-cadastro');
@@ -601,8 +628,18 @@ async function abrirModalEdicao(id) {
   document.getElementById('nome-loja').value            = r.nome_loja           || '';
   document.getElementById('data-inauguracao').value     = r.data_inauguracao    || '';
   document.getElementById('telefone').value             = r.telefone            || '';
-  document.getElementById('status-form').value          = r.status              || 'parado';
   document.getElementById('observacao').value           = r.observacao          || '';
+
+  // Bloquear opção de Inaugurado se não estiver inaugurado
+  const optInaugurado = document.querySelector('#status-form option[value="inaugurado"]');
+  if (r.status !== 'inaugurado' && optInaugurado) {
+    optInaugurado.disabled = true;
+    optInaugurado.textContent = '🟢 Inaugurado (use botão da tabela)';
+  } else if (optInaugurado) {
+    optInaugurado.disabled = false;
+    optInaugurado.textContent = '🟢 Inaugurado';
+  }
+  document.getElementById('status-form').value = r.status || 'parado';
 
   abrirModal('modal-cadastro');
 }

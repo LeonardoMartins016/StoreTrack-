@@ -65,6 +65,8 @@ async function initDB() {
       `ALTER TABLE implantacoes ADD COLUMN IF NOT EXISTS servidor VARCHAR(50)`,
       `ALTER TABLE implantacoes ADD COLUMN IF NOT EXISTS login_loja_express VARCHAR(255)`,
       `ALTER TABLE implantacoes ADD COLUMN IF NOT EXISTS senha_loja_express VARCHAR(255)`,
+      `ALTER TABLE implantacoes ADD COLUMN IF NOT EXISTS emite_cupom_fiscal VARCHAR(10)`,
+      `ALTER TABLE implantacoes ADD COLUMN IF NOT EXISTS abriu_chamado_teste BOOLEAN DEFAULT FALSE`,
     ];
     for (const sql of migracoes) {
       await client.query(sql);
@@ -315,10 +317,10 @@ app.patch('/api/implantacoes/:id/status', requireAuth, async (req, res) => {
 app.patch('/api/implantacoes/:id/inaugurar', requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
-    const { data_inauguracao_real, servidor, login_loja_express, senha_loja_express, observacao } = req.body;
+    const { data_inauguracao_real, servidor, login_loja_express, senha_loja_express, telefone, emite_cupom_fiscal, abriu_chamado_teste, observacao } = req.body;
 
-    if (!data_inauguracao_real || !servidor) {
-      return res.status(400).json({ error: 'Data de inauguração e servidor são obrigatórios.' });
+    if (!data_inauguracao_real || !servidor || !login_loja_express || !senha_loja_express || !telefone) {
+      return res.status(400).json({ error: 'Data, servidor, login, senha e telefone são obrigatórios.' });
     }
 
     const existing = await getOne('SELECT * FROM implantacoes WHERE id = ?', [id]);
@@ -327,15 +329,19 @@ app.patch('/api/implantacoes/:id/inaugurar', requireAuth, async (req, res) => {
     const result = await runWrite(`
       UPDATE implantacoes
       SET status = 'inaugurado',
+          data_inauguracao = ?,
           data_inauguracao_real = ?,
           servidor = ?,
           login_loja_express = ?,
           senha_loja_express = ?,
+          telefone = ?,
+          emite_cupom_fiscal = ?,
+          abriu_chamado_teste = ?,
           observacao = ?,
           updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
       RETURNING *
-    `, [data_inauguracao_real, servidor, login_loja_express || null, senha_loja_express || null, observacao || null, id]);
+    `, [data_inauguracao_real, data_inauguracao_real, servidor, login_loja_express, senha_loja_express, telefone, emite_cupom_fiscal || null, abriu_chamado_teste || false, observacao || null, id]);
 
     const updated = result.rows[0];
     res.json(updated);

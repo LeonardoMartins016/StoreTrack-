@@ -632,13 +632,37 @@
           <!-- Linha: Login + Senha Loja Express -->
           <div class="form-row">
             <div class="form-group">
-              <label class="form-label" for="inaug-login">Login do Loja Express</label>
+              <label class="form-label" for="inaug-login">Login do Loja Express <span class="required">*</span></label>
               <input type="text" id="inaug-login" class="form-input" placeholder="Login do sistema" />
             </div>
             <div class="form-group">
-              <label class="form-label" for="inaug-senha">Senha do Loja Express</label>
+              <label class="form-label" for="inaug-senha">Senha do Loja Express <span class="required">*</span></label>
               <input type="text" id="inaug-senha" class="form-input" placeholder="Senha do sistema" />
             </div>
+          </div>
+
+          <!-- Linha: Telefone + Cupom Fiscal -->
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="inaug-telefone">Telefone <span class="required">*</span></label>
+              <input type="text" id="inaug-telefone" class="form-input" placeholder="(00) 00000-0000" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="inaug-cupom">Emite Cupom Fiscal? <span class="required">*</span></label>
+              <select id="inaug-cupom" class="form-input">
+                <option value="">Selecione...</option>
+                <option value="Sim">Sim</option>
+                <option value="Não">Não</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Chamado Teste -->
+          <div class="form-group" style="display: flex; align-items: center; gap: 8px; margin-top: 10px; margin-bottom: 10px;">
+            <input type="checkbox" id="inaug-chamado" style="width: 18px; height: 18px; cursor: pointer;" />
+            <label class="form-label" for="inaug-chamado" style="margin: 0; cursor: pointer;">
+              Cliente abriu chamado teste?
+            </label>
           </div>
 
           <!-- Observação -->
