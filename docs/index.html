@@ -90,7 +90,7 @@
 
       <!-- CARDS DE RESUMO -->
       <section class="cards-grid" id="cards-resumo">
-        <div class="summary-card" id="card-total">
+        <div class="summary-card summary-card-clickable" id="card-total" onclick="filtrarTotal()" title="Clique para ver todas">
           <div class="card-icon-wrap card-icon-orange">
             <i data-lucide="layers"></i>
           </div>
@@ -101,7 +101,7 @@
           <div class="card-glow card-glow-orange"></div>
         </div>
 
-        <div class="summary-card" id="card-mes">
+        <div class="summary-card summary-card-clickable" id="card-mes" onclick="filtrarMes()" title="Clique para filtrar inaugurações do mês">
           <div class="card-icon-wrap card-icon-blue">
             <i data-lucide="calendar-check"></i>
           </div>
@@ -123,7 +123,7 @@
           <div class="card-glow card-glow-purple"></div>
         </div>
 
-        <div class="summary-card" id="card-andamento">
+        <div class="summary-card summary-card-clickable" id="card-andamento" onclick="filtrarStatus('em_andamento')" title="Clique para filtrar em andamento">
           <div class="card-icon-wrap card-icon-amber">
             <i data-lucide="loader-2"></i>
           </div>
@@ -134,7 +134,7 @@
           <div class="card-glow card-glow-amber"></div>
         </div>
 
-        <div class="summary-card" id="card-inaugurados">
+        <div class="summary-card summary-card-clickable" id="card-inaugurados" onclick="filtrarStatus('inaugurado')" title="Clique para filtrar inaugurados">
           <div class="card-icon-wrap card-icon-green">
             <i data-lucide="check-circle-2"></i>
           </div>
@@ -145,7 +145,7 @@
           <div class="card-glow card-glow-green"></div>
         </div>
 
-        <div class="summary-card" id="card-parados">
+        <div class="summary-card summary-card-clickable" id="card-parados" onclick="filtrarStatus('parado')" title="Clique para filtrar parados">
           <div class="card-icon-wrap card-icon-red">
             <i data-lucide="alert-circle"></i>
           </div>

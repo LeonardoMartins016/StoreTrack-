@@ -320,6 +320,47 @@ function filtrarSemana() {
   document.querySelector('.filters-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
+function filtrarMes() {
+  if (abaAtiva !== 'implantacoes') mudarAba('implantacoes');
+  
+  const hoje = new Date();
+  const primeiroDia = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+  const ultimoDia = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0);
+  
+  const isoPrimeiro = primeiroDia.toISOString().slice(0, 10);
+  const isoUltimo = ultimoDia.toISOString().slice(0, 10);
+  
+  ['f-cliente', 'f-loja', 'f-responsavel', 'f-tipo', 'f-status'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('f-data-de').value = isoPrimeiro;
+  document.getElementById('f-data-ate').value = isoUltimo;
+  
+  aplicarFiltros();
+  showToast(`📅 Filtrando inaugurações do mês`, 'info');
+  document.querySelector('.filters-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function filtrarStatus(status) {
+  if (abaAtiva !== 'implantacoes') mudarAba('implantacoes');
+  
+  ['f-data-de', 'f-data-ate', 'f-cliente', 'f-loja', 'f-responsavel', 'f-tipo'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('f-status').value = status;
+  
+  aplicarFiltros();
+  const labels = { 'em_andamento': 'Em Andamento', 'inaugurado': 'Inaugurados', 'parado': 'Parados' };
+  showToast(`Filtrando por status: ${labels[status]}`, 'info');
+  document.querySelector('.filters-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function filtrarTotal() {
+  if (abaAtiva !== 'implantacoes') mudarAba('implantacoes');
+  
+  ['f-data-de', 'f-data-ate', 'f-cliente', 'f-loja', 'f-responsavel', 'f-tipo', 'f-status'].forEach(id => document.getElementById(id).value = '');
+  
+  aplicarFiltros();
+  showToast(`Exibindo todas as implantações`, 'info');
+  document.querySelector('.filters-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
 function limparFiltrosSuporte() {
   document.getElementById('s-cliente').value = '';
   document.getElementById('s-loja').value    = '';
