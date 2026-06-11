@@ -400,10 +400,9 @@ function renderizarTabela() {
       <td data-label="Observação" class="obs-cell" title="${escHtml(obs)}">${obsShort ? escHtml(obsShort) : '<span style="opacity:.25">—</span>'}</td>
       <td data-label="Ações">
         <div class="acoes-wrap">
-          ${(r.tipo === 'cliente_novo' || r.tipo === 'troca_titularidade') ? 
-            `<button class="btn-icon" title="Treinamentos" onclick="abrirModalTreinamentos(${r.id})">
-               <i data-lucide="graduation-cap"></i>
-             </button>` : ''}
+          <button class="btn-icon" title="Treinamentos" onclick="abrirModalTreinamentos(${r.id})">
+            <i data-lucide="graduation-cap"></i>
+          </button>
           <button class="btn-icon" title="Editar" onclick="abrirModalEdicao(${r.id})">
             <i data-lucide="pencil"></i>
           </button>
@@ -850,10 +849,9 @@ async function carregarSuporte() {
             <button class="btn-icon" title="Informações Adicionais" onclick='abrirModalInfoSuporte(${JSON.stringify(r).replace(/'/g, "&#39;")})'>
               <i data-lucide="info"></i>
             </button>
-            ${(r.tipo === 'cliente_novo' || r.tipo === 'troca_titularidade') ? 
-              `<button class="btn-icon" title="Treinamentos" onclick="abrirModalTreinamentos(${r.id})">
-                 <i data-lucide="graduation-cap"></i>
-               </button>` : ''}
+            <button class="btn-icon" title="Treinamentos" onclick="abrirModalTreinamentos(${r.id})">
+              <i data-lucide="graduation-cap"></i>
+            </button>
             <button class="btn-icon" title="Editar" onclick="abrirModalEdicao(${r.id})">
               <i data-lucide="pencil"></i>
             </button>
@@ -1432,13 +1430,30 @@ function renderizarCamposTreinamentos() {
       </div>
       <div class="form-group" style="margin-bottom:0;">
         <label class="form-label">Link do treinamento</label>
-        <input type="url" class="form-input" value="${escHtml(t.link)}" oninput="treinamentosAtuais[${i}].link = this.value" placeholder="https://..." />
+        <div style="display:flex; gap:8px;">
+          <input type="url" id="link-treinamento-${i}" class="form-input" value="${escHtml(t.link)}" oninput="treinamentosAtuais[${i}].link = this.value" placeholder="https://..." readonly style="background: var(--bg-main); opacity: 0.8; cursor: not-allowed;" />
+          <button type="button" class="btn-icon" title="Editar Link" onclick="habilitarEdicaoLink(${i})">
+            <i data-lucide="pencil"></i>
+          </button>
+        </div>
       </div>
     `;
     container.appendChild(div);
   });
   lucide.createIcons();
 }
+
+function habilitarEdicaoLink(index) {
+  const input = document.getElementById(`link-treinamento-${index}`);
+  if (input) {
+    input.removeAttribute('readonly');
+    input.style.background = '';
+    input.style.opacity = '1';
+    input.style.cursor = 'text';
+    input.focus();
+  }
+}
+
 
 async function salvarTreinamentos() {
   const id = document.getElementById('treinamento-implantacao-id').value;
