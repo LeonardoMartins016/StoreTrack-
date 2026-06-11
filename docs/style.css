@@ -844,6 +844,21 @@ th.sort-desc .sort-icon { opacity: 1; color: var(--primary); }
 
 .hidden { display: none !important; }
 
+/* ─── TREINAMENTOS INPUT GROUP ──────────────────────────────── */
+.treinamentos-input-group {
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+  align-items: flex-end;
+  justify-content: flex-start;
+}
+
+.treinamentos-input-wrapper {
+  width: 250px;
+  max-width: 100%;
+}
+
+
 /* ─── DELETE MODAL ──────────────────────────────────────────── */
 .delete-confirm-icon {
   width: 64px;
@@ -989,6 +1004,14 @@ th.sort-desc .sort-icon { opacity: 1; color: var(--primary); }
   .header-user { display: none; }
   .header-left { gap: 10px; }
   .header-right { gap: 8px; }
+
+  .treinamentos-input-group {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .treinamentos-input-wrapper {
+    width: 100%;
+  }
 
   #btn-novo-cadastro {
     padding: 8px 12px;
