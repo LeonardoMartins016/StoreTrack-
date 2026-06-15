@@ -438,6 +438,89 @@ app.get('/api/suporte', requireAuth, async (req, res) => {
 });
 
 // ─────────────────────────────────────────────────────────────────
+// GET /api/dashboard
+// Retorna dados agregados para o painel de dashboard
+// ─────────────────────────────────────────────────────────────────
+app.get('/api/dashboard', requireAuth, async (req, res) => {
+  try {
+    // Todas as implantações
+    const all = await getAll('SELECT * FROM implantacoes ORDER BY created_at DESC');
+
+    // ─── Helpers de data ───
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+    const diaSemana = hoje.getDay() === 0 ? 6 : hoje.getDay() - 1;
+    const segunda = new Date(hoje);
+    segunda.setDate(hoje.getDate() - diaSemana);
+    const domingo = new Date(segunda);
+    domingo.setDate(segunda.getDate() + 6);
+    const isoSeg = segunda.toISOString().slice(0, 10);
+    const isoDom = domingo.toISOString().slice(0, 10);
+
+    // ─── 1. Quantidade por Responsável (por tipo) ───
+    const porResponsavel = {};
+    all.forEach(r => {
+      const resp = r.responsavel_tecnico || 'Não atribuído';
+      if (!porResponsavel[resp]) {
+        porResponsavel[resp] = { escalada: 0, cliente_novo: 0, troca_titularidade: 0, total: 0 };
+      }
+      if (porResponsavel[resp][r.tipo] !== undefined) {
+        porResponsavel[resp][r.tipo]++;
+      }
+      porResponsavel[resp].total++;
+    });
+
+    // ─── 2. Status por Tipo de Implantação ───
+    const statusPorTipo = {
+      cliente_novo: { em_andamento: 0, inaugurado: 0, parado: 0 },
+      escalada: { em_andamento: 0, inaugurado: 0, parado: 0 },
+      troca_titularidade: { em_andamento: 0, inaugurado: 0, parado: 0 },
+    };
+    all.forEach(r => {
+      if (statusPorTipo[r.tipo] && statusPorTipo[r.tipo][r.status] !== undefined) {
+        statusPorTipo[r.tipo][r.status]++;
+      }
+    });
+
+    // ─── 3. Lojas em implantação (não inauguradas) ───
+    const emImplantacao = all.filter(r => r.status !== 'inaugurado');
+    const implantacaoPorTipo = {
+      cliente_novo: emImplantacao.filter(r => r.tipo === 'cliente_novo').length,
+      escalada: emImplantacao.filter(r => r.tipo === 'escalada').length,
+      troca_titularidade: emImplantacao.filter(r => r.tipo === 'troca_titularidade').length,
+      total: emImplantacao.length,
+    };
+
+    // ─── 4. Lojas inauguradas ───
+    const inauguradas = all.filter(r => r.status === 'inaugurado').length;
+
+    // ─── 5. Inaugurações esta semana (lojas com data de inauguração na semana) ───
+    const semana = all.filter(r => {
+      return r.data_inauguracao >= isoSeg && r.data_inauguracao <= isoDom;
+    });
+    const semanaPorTipo = {
+      cliente_novo: semana.filter(r => r.tipo === 'cliente_novo').length,
+      escalada: semana.filter(r => r.tipo === 'escalada').length,
+      troca_titularidade: semana.filter(r => r.tipo === 'troca_titularidade').length,
+      total: semana.length,
+    };
+
+    res.json({
+      porResponsavel,
+      statusPorTipo,
+      implantacaoPorTipo,
+      inauguradas,
+      semanaPorTipo,
+      totalGeral: all.length,
+      periodoSemana: { de: isoSeg, ate: isoDom },
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────
 // DELETE /api/implantacoes/:id
 // ─────────────────────────────────────────────────────────────────
 app.delete('/api/implantacoes/:id', requireAuth, async (req, res) => {

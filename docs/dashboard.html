@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard — Controle de Implantação</title>
+  <meta name="description" content="Dashboard gerencial com métricas de implantação, inaugurações e desempenho por responsável técnico." />
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="favicon.png" />
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+
+  <link rel="stylesheet" href="style.css" />
+
+  <!-- Verifica autenticação -->
+  <script>
+    (function() {
+      fetch('/api/auth/check')
+        .then(r => r.json())
+        .then(d => {
+          if (!d.loggedIn) location.replace('/login.html');
+        })
+        .catch(() => location.replace('/login.html'));
+    })();
+  </script>
+</head>
+<body>
+
+  <!-- ═══════════════════════════ TOAST ═══════════════════════════ -->
+  <div id="toast-container" aria-live="polite"></div>
+
+  <!-- ═══════════════════════════ HEADER ═══════════════════════════ -->
+  <header class="app-header">
+    <div class="header-left">
+      <div class="header-logo">
+        <i data-lucide="bar-chart-3" class="logo-icon"></i>
+      </div>
+      <div>
+        <h1 class="header-title">Dashboard</h1>
+        <p class="header-subtitle">Visão gerencial das implantações</p>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="header-time" id="header-time"></div>
+      <a href="/index.html" class="btn-ghost" style="text-decoration:none;">
+        <i data-lucide="layout-list"></i>
+        Implantações
+      </a>
+      <button class="btn-logout" onclick="fazerLogout()" title="Sair">
+        <i data-lucide="log-out"></i>
+        Sair
+      </button>
+    </div>
+  </header>
+
+  <!-- ═══════════════════════════ MAIN ═══════════════════════════ -->
+  <main class="app-main dash-main">
+
+    <!-- ══════ LOADING STATE ══════ -->
+    <div id="dash-loading" class="dash-loading-state">
+      <i data-lucide="loader-2" class="spinning" style="width:40px;height:40px;color:var(--primary);"></i>
+      <p style="color:var(--text-secondary);margin-top:12px;">Carregando dashboard...</p>
+    </div>
+
+    <!-- ══════ CONTENT (hidden until loaded) ══════ -->
+    <div id="dash-content" style="display:none;">
+
+      <!-- ═══════ SEÇÃO 1: KPIs GLOBAIS ═══════ -->
+      <section class="dash-section">
+        <div class="dash-section-header">
+          <div class="dash-section-title">
+            <i data-lucide="activity"></i>
+            <span>Visão Geral</span>
+          </div>
+          <span class="dash-last-update" id="dash-last-update"></span>
+        </div>
+
+        <div class="dash-kpi-grid">
+          <!-- Lojas em Implantação -->
+          <div class="dash-kpi-card dash-kpi-implantacao">
+            <div class="dash-kpi-icon" style="background:linear-gradient(135deg,#f59e0b,#d97706);">
+              <i data-lucide="hard-hat"></i>
+            </div>
+            <div class="dash-kpi-body">
+              <span class="dash-kpi-label">Em Implantação</span>
+              <span class="dash-kpi-value" id="kpi-implantacao-total">—</span>
+              <div class="dash-kpi-sub">
+                <span class="dash-kpi-chip chip-novo"><i data-lucide="user-plus"></i> <b id="kpi-impl-novo">0</b> Novos</span>
+                <span class="dash-kpi-chip chip-escalada"><i data-lucide="trending-up"></i> <b id="kpi-impl-escalada">0</b> Escaladas</span>
+                <span class="dash-kpi-chip chip-troca"><i data-lucide="refresh-cw"></i> <b id="kpi-impl-troca">0</b> Trocas</span>
+              </div>
+            </div>
+            <div class="card-glow card-glow-amber"></div>
+          </div>
+
+          <!-- Inauguradas -->
+          <div class="dash-kpi-card dash-kpi-inauguradas">
+            <div class="dash-kpi-icon" style="background:linear-gradient(135deg,#22c55e,#16a34a);">
+              <i data-lucide="check-circle-2"></i>
+            </div>
+            <div class="dash-kpi-body">
+              <span class="dash-kpi-label">Lojas Inauguradas</span>
+              <span class="dash-kpi-value" id="kpi-inauguradas">—</span>
+            </div>
+            <div class="card-glow card-glow-green"></div>
+          </div>
+
+          <!-- Inaugurações da Semana -->
+          <div class="dash-kpi-card dash-kpi-semana">
+            <div class="dash-kpi-icon" style="background:linear-gradient(135deg,#a78bfa,#7c3aed);">
+              <i data-lucide="calendar-check"></i>
+            </div>
+            <div class="dash-kpi-body">
+              <span class="dash-kpi-label">Inaugurações Esta Semana</span>
+              <span class="dash-kpi-value" id="kpi-semana-total">—</span>
+              <div class="dash-kpi-sub">
+                <span class="dash-kpi-chip chip-novo"><i data-lucide="user-plus"></i> <b id="kpi-sem-novo">0</b></span>
+                <span class="dash-kpi-chip chip-escalada"><i data-lucide="trending-up"></i> <b id="kpi-sem-escalada">0</b></span>
+                <span class="dash-kpi-chip chip-troca"><i data-lucide="refresh-cw"></i> <b id="kpi-sem-troca">0</b></span>
+              </div>
+            </div>
+            <div class="card-glow card-glow-purple"></div>
+          </div>
+
+          <!-- Total Geral -->
+          <div class="dash-kpi-card dash-kpi-total">
+            <div class="dash-kpi-icon" style="background:linear-gradient(135deg,#f97316,#ff4500);">
+              <i data-lucide="layers"></i>
+            </div>
+            <div class="dash-kpi-body">
+              <span class="dash-kpi-label">Total de Registros</span>
+              <span class="dash-kpi-value" id="kpi-total-geral">—</span>
+            </div>
+            <div class="card-glow card-glow-orange"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════ SEÇÃO 2: STATUS POR TIPO ═══════ -->
+      <section class="dash-section">
+        <div class="dash-section-header">
+          <div class="dash-section-title">
+            <i data-lucide="pie-chart"></i>
+            <span>Status por Tipo de Implantação</span>
+          </div>
+        </div>
+
+        <div class="dash-status-grid">
+          <!-- Cliente Novo -->
+          <div class="dash-status-panel" id="panel-cliente-novo">
+            <div class="dash-status-panel-header">
+              <span class="badge badge-cliente-novo">🆕 Cliente Novo</span>
+              <span class="dash-status-panel-total" id="status-novo-total">0</span>
+            </div>
+            <div class="dash-status-bars">
+              <div class="dash-status-row">
+                <div class="dash-status-dot" style="background:var(--status-andando);"></div>
+                <span class="dash-status-label">Em Andamento</span>
+                <span class="dash-status-count" id="status-novo-andamento">0</span>
+                <div class="dash-status-bar-wrap">
+                  <div class="dash-status-bar bar-andamento" id="bar-novo-andamento" style="width:0%"></div>
+                </div>
+              </div>
+              <div class="dash-status-row">
+                <div class="dash-status-dot" style="background:var(--status-ok);"></div>
+                <span class="dash-status-label">Concluído</span>
+                <span class="dash-status-count" id="status-novo-concluido">0</span>
+                <div class="dash-status-bar-wrap">
+                  <div class="dash-status-bar bar-concluido" id="bar-novo-concluido" style="width:0%"></div>
+                </div>
+              </div>
+              <div class="dash-status-row">
+                <div class="dash-status-dot" style="background:var(--status-parado);"></div>
+                <span class="dash-status-label">Parado</span>
+                <span class="dash-status-count" id="status-novo-parado">0</span>
+                <div class="dash-status-bar-wrap">
+                  <div class="dash-status-bar bar-parado" id="bar-novo-parado" style="width:0%"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Escalada -->
+          <div class="dash-status-panel" id="panel-escalada">
+            <div class="dash-status-panel-header">
+              <span class="badge badge-escalada">📈 Escalada</span>
+              <span class="dash-status-panel-total" id="status-escalada-total">0</span>
+            </div>
+            <div class="dash-status-bars">
+              <div class="dash-status-row">
+                <div class="dash-status-dot" style="background:var(--status-andando);"></div>
+                <span class="dash-status-label">Em Andamento</span>
+                <span class="dash-status-count" id="status-escalada-andamento">0</span>
+                <div class="dash-status-bar-wrap">
+                  <div class="dash-status-bar bar-andamento" id="bar-escalada-andamento" style="width:0%"></div>
+                </div>
+              </div>
+              <div class="dash-status-row">
+                <div class="dash-status-dot" style="background:var(--status-ok);"></div>
+                <span class="dash-status-label">Concluído</span>
+                <span class="dash-status-count" id="status-escalada-concluido">0</span>
+                <div class="dash-status-bar-wrap">
+                  <div class="dash-status-bar bar-concluido" id="bar-escalada-concluido" style="width:0%"></div>
+                </div>
+              </div>
+              <div class="dash-status-row">
+                <div class="dash-status-dot" style="background:var(--status-parado);"></div>
+                <span class="dash-status-label">Parado</span>
+                <span class="dash-status-count" id="status-escalada-parado">0</span>
+                <div class="dash-status-bar-wrap">
+                  <div class="dash-status-bar bar-parado" id="bar-escalada-parado" style="width:0%"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Troca de Titularidade -->
+          <div class="dash-status-panel" id="panel-troca">
+            <div class="dash-status-panel-header">
+              <span class="badge badge-troca">🔄 Troca de Titularidade</span>
+              <span class="dash-status-panel-total" id="status-troca-total">0</span>
+            </div>
+            <div class="dash-status-bars">
+              <div class="dash-status-row">
+                <div class="dash-status-dot" style="background:var(--status-andando);"></div>
+                <span class="dash-status-label">Em Andamento</span>
+                <span class="dash-status-count" id="status-troca-andamento">0</span>
+                <div class="dash-status-bar-wrap">
+                  <div class="dash-status-bar bar-andamento" id="bar-troca-andamento" style="width:0%"></div>
+                </div>
+              </div>
+              <div class="dash-status-row">
+                <div class="dash-status-dot" style="background:var(--status-ok);"></div>
+                <span class="dash-status-label">Concluído</span>
+                <span class="dash-status-count" id="status-troca-concluido">0</span>
+                <div class="dash-status-bar-wrap">
+                  <div class="dash-status-bar bar-concluido" id="bar-troca-concluido" style="width:0%"></div>
+                </div>
+              </div>
+              <div class="dash-status-row">
+                <div class="dash-status-dot" style="background:var(--status-parado);"></div>
+                <span class="dash-status-label">Parado</span>
+                <span class="dash-status-count" id="status-troca-parado">0</span>
+                <div class="dash-status-bar-wrap">
+                  <div class="dash-status-bar bar-parado" id="bar-troca-parado" style="width:0%"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════ SEÇÃO 3: QUANTIDADE POR RESPONSÁVEL ═══════ -->
+      <section class="dash-section">
+        <div class="dash-section-header">
+          <div class="dash-section-title">
+            <i data-lucide="users"></i>
+            <span>Quantidade por Responsável Técnico</span>
+          </div>
+        </div>
+
+        <div class="table-panel">
+          <div class="table-wrapper">
+            <table class="main-table" id="dash-resp-table">
+              <thead>
+                <tr>
+                  <th>Responsável</th>
+                  <th style="text-align:center;">📈 Escaladas</th>
+                  <th style="text-align:center;">🆕 Clientes Novos</th>
+                  <th style="text-align:center;">🔄 Troca de Titularidade</th>
+                  <th style="text-align:center;">Total</th>
+                </tr>
+              </thead>
+              <tbody id="dash-resp-tbody">
+                <tr class="empty-row">
+                  <td colspan="5">
+                    <div class="empty-state">
+                      <i data-lucide="loader-2" class="empty-icon spinning"></i>
+                      <p>Carregando...</p>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════ SEÇÃO 4: INAUGURAÇÕES ESTA SEMANA POR TIPO ═══════ -->
+      <section class="dash-section">
+        <div class="dash-section-header">
+          <div class="dash-section-title">
+            <i data-lucide="calendar-days"></i>
+            <span>Inaugurações Esta Semana</span>
+          </div>
+          <span class="dash-semana-periodo" id="dash-semana-periodo"></span>
+        </div>
+
+        <div class="dash-semana-grid">
+          <div class="dash-semana-card semana-card-novo">
+            <div class="dash-semana-icon" style="background:linear-gradient(135deg,#0ea5e9,#0284c7);">
+              <i data-lucide="user-plus"></i>
+            </div>
+            <div class="dash-semana-body">
+              <span class="dash-semana-value" id="semana-novo">0</span>
+              <span class="dash-semana-label">Cliente Novo</span>
+            </div>
+            <div class="card-glow card-glow-blue"></div>
+          </div>
+
+          <div class="dash-semana-card semana-card-escalada">
+            <div class="dash-semana-icon" style="background:linear-gradient(135deg,#a78bfa,#7c3aed);">
+              <i data-lucide="trending-up"></i>
+            </div>
+            <div class="dash-semana-body">
+              <span class="dash-semana-value" id="semana-escalada">0</span>
+              <span class="dash-semana-label">Escalada</span>
+            </div>
+            <div class="card-glow card-glow-purple"></div>
+          </div>
+
+          <div class="dash-semana-card semana-card-troca">
+            <div class="dash-semana-icon" style="background:linear-gradient(135deg,#f97316,#ea580c);">
+              <i data-lucide="refresh-cw"></i>
+            </div>
+            <div class="dash-semana-body">
+              <span class="dash-semana-value" id="semana-troca">0</span>
+              <span class="dash-semana-label">Troca de Titularidade</span>
+            </div>
+            <div class="card-glow card-glow-orange"></div>
+          </div>
+        </div>
+      </section>
+
+    </div><!-- /dash-content -->
+  </main>
+
+  <script src="dashboard.js"></script>
+</body>
+</html>
