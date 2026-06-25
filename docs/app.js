@@ -472,14 +472,14 @@ function renderizarTabela() {
 
   if (filteredRecords.length === 0) {
     tbody.innerHTML = `
-        < tr class="empty-row" >
+        <tr class="empty-row">
           <td colspan="9">
             <div class="empty-state">
               <i data-lucide="search-x" class="empty-icon"></i>
               <p>Nenhum registro encontrado</p>
             </div>
           </td>
-      </tr > `;
+      </tr>`;
     lucide.createIcons();
     return;
   }
@@ -490,7 +490,7 @@ function renderizarTabela() {
     const obs = r.observacao || '';
     const obsShort = obs.length > 55 ? obs.slice(0, 55) + '…' : obs;
     tr.innerHTML = `
-        < td data - label="Tipo" > ${ badgeTipo(r.tipo) }</td >
+      <td data-label="Tipo">${badgeTipo(r.tipo)}</td>
       <td data-label="Cliente">${escHtml(clienteDisplay(r))}</td>
       <td data-label="Loja">${escHtml(r.nome_loja || '—')}</td>
       <td data-label="Inauguração" style="white-space:nowrap">${formatarData(r.data_inauguracao)}</td>
@@ -521,7 +521,7 @@ function renderizarTabela() {
 function atualizarContador() {
   const el = document.getElementById('table-counter');
   const n  = filteredRecords.length;
-  el.innerHTML = `< span > ${ n }</span > registro${ n !== 1 ? 's' : '' } encontrado${ n !== 1 ? 's' : '' } `;
+  el.innerHTML = `<span>${n}</span> registro${n !== 1 ? 's' : ''} encontrado${n !== 1 ? 's' : ''}`;
 }
 
 // ─── HELPERS DE DISPLAY ───────────────────────────────────────────
@@ -535,7 +535,7 @@ function clienteDisplay(r) {
 function formatarData(iso) {
   if (!iso) return '—';
   const [y, m, d] = iso.split('-');
-  return `${ d } /${m}/${ y } `;
+  return `${d}/${m}/${y}`;
 }
 
 function diasDesde(iso) {
@@ -561,7 +561,7 @@ function badgeTipo(tipo) {
     troca_titularidade: ['badge-troca',       '🔄 Troca de Titularidade'],
   };
   const [cls, label] = map[tipo] || ['badge-escalada', tipo];
-  return `< span class="badge ${cls}" > ${ label }</span > `;
+  return `<span class="badge ${cls}">${label}</span>`;
 }
 
 // ─── STATUS BOTÃO (abre portal dropdown) ──────────────────────────
@@ -573,11 +573,11 @@ function renderStatusBtn(r) {
   };
   const [emoji, label] = map[r.status] || ['⚪', r.status];
   return `
-        < div class="status-select-wrap" >
+        <div class="status-select-wrap">
           <button class="status-btn ${r.status}" onclick="abrirPortalDropdown(event, ${r.id})">
             ${emoji} ${label} <i data-lucide="chevron-down"></i>
           </button>
-    </div > `;
+    </div>`;
 }
 
 // ─── MUDAR STATUS ─────────────────────────────────────────────────
