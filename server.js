@@ -68,6 +68,7 @@ async function initDB() {
       `ALTER TABLE implantacoes ADD COLUMN IF NOT EXISTS emite_cupom_fiscal VARCHAR(10)`,
       `ALTER TABLE implantacoes ADD COLUMN IF NOT EXISTS abriu_chamado_teste BOOLEAN DEFAULT FALSE`,
       `ALTER TABLE implantacoes ADD COLUMN IF NOT EXISTS treinamentos JSONB DEFAULT '[]'::jsonb`,
+      `ALTER TABLE implantacoes ADD COLUMN IF NOT EXISTS ummense_uuid VARCHAR(255) UNIQUE`,
     ];
     for (const sql of migracoes) {
       await client.query(sql);
@@ -609,20 +610,93 @@ app.delete('/api/responsaveis/:id', requireAuth, async (req, res) => {
 });
 
 // ─────────────────────────────────────────────────────────────────
-// POST /api/webhook/ummense — Rota "Espiã" (Fase 1)
-// Objetivo: Apenas imprimir no console o que a Ummense envia
+// POST /api/webhook/ummense — Fase 2: Recebe e grava no banco
+// Lógica UPSERT: cria novo registro ou atualiza se UUID já existe
 // ─────────────────────────────────────────────────────────────────
-app.post('/api/webhook/ummense', (req, res) => {
+app.post('/api/webhook/ummense', async (req, res) => {
+  // 1. Log de debug (mantém visibilidade nos Logs do Render)
   console.log('\n======================================================');
   console.log('🚨 WEBHOOK UMMENSE RECEBIDO!');
   console.log('🗓️ Data:', new Date().toISOString());
-  console.log('📦 Headers:', JSON.stringify(req.headers, null, 2));
-  console.log('📦 Payload (Corpo da Requisição):');
-  console.log(JSON.stringify(req.body, null, 2));
+  console.log('📦 Evento:', req.headers['x-ummense-event'] || 'N/A');
+  console.log('📦 Payload:', JSON.stringify(req.body, null, 2));
   console.log('======================================================\n');
-  
-  // Responde OK rapidamente para a Ummense saber que chegou
-  res.status(200).send('Webhook recebido com sucesso (Log gravado no console)');
+
+  try {
+    const payload = req.body;
+    if (!payload || !payload.uuid) {
+      return res.status(400).json({ error: 'Payload inválido: UUID ausente.' });
+    }
+
+    // 2. Determinar o tipo pela tag
+    const tags = (payload.tags || []).map(t => t.toUpperCase());
+    let tipo = 'escalada'; // padrão
+    if (tags.includes('PRIMEIRA LOJA'))         tipo = 'cliente_novo';
+    if (tags.includes('TROCA DE TITULARIDADE')) tipo = 'troca_titularidade';
+
+    // 3. Extrair nome da loja da description
+    let nome_loja = null;
+    if (payload.description) {
+      // Procura o trecho após "Nome e endereço da loja:"
+      const match = payload.description.match(/Nome e endere[çc]o da loja:\s*([^\n]+)/i);
+      if (match && match[1]) {
+        nome_loja = match[1].trim();
+      }
+    }
+    // Fallback: usa o nome do card
+    if (!nome_loja) {
+      nome_loja = payload.name || null;
+    }
+
+    // 4. Extrair demais campos
+    const nome_cliente = payload.name || null;
+    const telefone     = payload.contacts?.[0]?.cellphone || null;
+    const data_inaug   = payload.date?.end_date || null;
+    const observacao   = payload.description || null;
+
+    // 5. Verificar se já existe registro com este UUID
+    const existente = await getOne(
+      'SELECT * FROM implantacoes WHERE ummense_uuid = ?',
+      [payload.uuid]
+    );
+
+    if (existente) {
+      // ─── UPDATE: Atualiza campos que vieram no payload ───
+      const result = await runWrite(`
+        UPDATE implantacoes SET
+          tipo = ?,
+          nome_cliente = ?,
+          nome_loja = ?,
+          data_inauguracao = COALESCE(?, data_inauguracao),
+          telefone = COALESCE(?, telefone),
+          observacao = COALESCE(?, observacao),
+          updated_at = CURRENT_TIMESTAMP
+        WHERE ummense_uuid = ?
+        RETURNING *
+      `, [tipo, nome_cliente, nome_loja, data_inaug, telefone, observacao, payload.uuid]);
+
+      const updated = result.rows[0];
+      console.log('🔄 Implantação ATUALIZADA via webhook! ID:', updated.id);
+      return res.status(200).json({ success: true, action: 'updated', id: updated.id });
+    }
+
+    // ─── INSERT: Cria novo registro ───
+    const result = await runWrite(`
+      INSERT INTO implantacoes
+        (tipo, nome_cliente, nome_loja, data_inauguracao,
+         responsavel_tecnico, telefone, observacao, status, ummense_uuid)
+      VALUES (?, ?, ?, ?, ?, ?, ?, 'parado', ?)
+      RETURNING *
+    `, [tipo, nome_cliente, nome_loja, data_inaug, '', telefone, observacao, payload.uuid]);
+
+    const novo = result.rows[0];
+    console.log('✅ Implantação CRIADA via webhook! ID:', novo.id);
+    return res.status(201).json({ success: true, action: 'created', id: novo.id });
+
+  } catch (err) {
+    console.error('❌ Erro ao processar webhook Ummense:', err);
+    return res.status(500).json({ error: err.message });
+  }
 });
 
 // ─── ROTA RAIZ: redireciona para login ───────────────────────────
