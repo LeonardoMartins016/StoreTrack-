@@ -651,7 +651,9 @@ app.post('/api/webhook/ummense', async (req, res) => {
     // 4. Extrair demais campos
     const nome_cliente = payload.name || null;
     const telefone     = payload.contacts?.[0]?.cellphone || null;
-    const data_inaug   = payload.date?.end_date || null;
+    const data_inaug   = payload.date?.end_date
+                        || (payload.estimated_end_date ? payload.estimated_end_date.split(' ')[0] : null)
+                        || new Date().toISOString().slice(0, 10); // fallback: data de hoje
     const observacao   = payload.description || null;
 
     // 5. Verificar se já existe registro com este UUID
