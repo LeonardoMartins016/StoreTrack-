@@ -858,6 +858,198 @@ th.sort-desc .sort-icon { opacity: 1; color: var(--primary); }
   max-width: 100%;
 }
 
+/* ─── EXPORT FIELD SELECTION MODAL ─────────────────────────────── */
+.modal-box-export { max-width: 560px; }
+
+.modal-header-export {
+  background: linear-gradient(135deg, rgba(249,115,22,.06), rgba(167,139,250,.06));
+}
+
+.export-modal-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, var(--primary), #ff4500);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 20px rgba(249,115,22,.35);
+  flex-shrink: 0;
+}
+.export-modal-icon svg { width: 22px; height: 22px; color: #fff; }
+
+.export-modal-subtitle {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-weight: 500;
+  margin-top: 2px;
+}
+
+/* Toggle "Relatório Completo" */
+.export-toggle-completo {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  background: linear-gradient(135deg, rgba(34,197,94,.08), rgba(34,197,94,.03));
+  border: 1.5px solid rgba(34,197,94,.3);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: var(--transition);
+  position: relative;
+  overflow: hidden;
+}
+.export-toggle-completo::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(34,197,94,.15), transparent);
+  opacity: 0;
+  transition: opacity .2s ease;
+}
+.export-toggle-completo:hover::before { opacity: 1; }
+.export-toggle-completo:hover {
+  border-color: rgba(34,197,94,.5);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(34,197,94,.15);
+}
+
+.export-toggle-completo.partial {
+  border-color: rgba(245,158,11,.3);
+  background: linear-gradient(135deg, rgba(245,158,11,.08), rgba(245,158,11,.03));
+}
+.export-toggle-completo.partial::before {
+  background: linear-gradient(135deg, rgba(245,158,11,.15), transparent);
+}
+
+.export-toggle-completo input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  accent-color: #22c55e;
+  cursor: pointer;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+}
+
+.export-toggle-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: relative;
+  z-index: 1;
+}
+.export-toggle-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  background: rgba(34,197,94,.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.export-toggle-icon svg { width: 18px; height: 18px; color: #22c55e; }
+
+.export-toggle-content strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.export-toggle-content span {
+  display: block;
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-weight: 400;
+  margin-top: 1px;
+}
+
+/* Grid de campos */
+.export-campos-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.export-campo-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all .2s ease;
+  user-select: none;
+}
+.export-campo-item:hover {
+  border-color: rgba(249,115,22,.3);
+  background: rgba(249,115,22,.04);
+  transform: translateY(-1px);
+}
+.export-campo-item:has(input:checked) {
+  border-color: rgba(249,115,22,.35);
+  background: rgba(249,115,22,.06);
+  box-shadow: 0 0 0 1px rgba(249,115,22,.1);
+}
+.export-campo-item.unchecked {
+  opacity: .5;
+  border-color: var(--border);
+  background: var(--bg-secondary);
+  box-shadow: none;
+}
+.export-campo-item.unchecked:hover { opacity: .75; }
+
+.export-campo-item input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  accent-color: var(--primary);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.export-campo-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.export-campo-icon {
+  font-size: 16px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.export-campo-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Contador no footer */
+.export-campos-counter {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+.export-campos-counter span {
+  color: var(--primary);
+  font-weight: 700;
+}
+
+/* Export modal footer: counter left, buttons right */
+.modal-box-export .modal-footer {
+  justify-content: space-between;
+  align-items: center;
+}
 
 /* ─── DELETE MODAL ──────────────────────────────────────────── */
 .delete-confirm-icon {
@@ -984,8 +1176,11 @@ th.sort-desc .sort-icon { opacity: 1; color: var(--primary); }
 
   .modal-box { max-width: 95vw; max-height: 95vh; }
   .modal-box-inauguracao { max-width: 95vw; }
+  .modal-box-export { max-width: 95vw; }
   .tipo-selector { grid-template-columns: 1fr; }
   .form-row { grid-template-columns: 1fr; }
+  .export-campos-grid { grid-template-columns: 1fr; }
+  .modal-box-export .modal-footer { flex-direction: column; gap: 12px; }
 }
 
 /* --- Mobile --- */

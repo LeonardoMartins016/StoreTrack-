@@ -1208,23 +1208,158 @@ function downloadBlob(blob, filename) {
   setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 100);
 }
 
+// ─── SELEÇÃO DE CAMPOS PARA EXPORTAÇÃO ──────────────────────────
+let exportPendente = { formato: null, origem: null }; // 'implantacoes' | 'suporte'
+
+// Definição dos campos disponíveis para cada origem
+const camposImplantacoes = [
+  { key: 'Tipo',                label: 'Tipo de Implantação',  icon: '📋' },
+  { key: 'Cliente',             label: 'Nome do Cliente',      icon: '👤' },
+  { key: 'Loja',                label: 'Nome da Loja',         icon: '🏪' },
+  { key: 'Data Inauguração',    label: 'Data de Inauguração',  icon: '📅' },
+  { key: 'Responsável Técnico', label: 'Responsável Técnico',  icon: '👷' },
+  { key: 'Status',              label: 'Status',               icon: '🔘' },
+  { key: 'Telefone',            label: 'Telefone',             icon: '📞' },
+  { key: 'Observação',          label: 'Observação',           icon: '📝' },
+];
+
+const camposSuporte = [
+  { key: 'Tipo',                label: 'Tipo de Implantação',  icon: '📋' },
+  { key: 'Cliente',             label: 'Nome do Cliente',      icon: '👤' },
+  { key: 'Loja',                label: 'Nome da Loja',         icon: '🏪' },
+  { key: 'Data Inauguração',    label: 'Data de Inauguração',  icon: '📅' },
+  { key: 'Dias no Suporte',     label: 'Dias no Suporte',      icon: '⏱️' },
+  { key: 'Servidor',            label: 'Servidor',             icon: '🖥️' },
+  { key: 'Login Loja Express',  label: 'Login Loja Express',   icon: '🔑' },
+  { key: 'Senha Loja Express',  label: 'Senha Loja Express',   icon: '🔒' },
+  { key: 'Responsável',         label: 'Responsável Técnico',  icon: '👷' },
+  { key: 'Telefone',            label: 'Telefone',             icon: '📞' },
+  { key: 'Observação',          label: 'Observação',           icon: '📝' },
+];
+
+function abrirModalExportCampos(formato, origem) {
+  fecharExportMenus();
+  exportPendente = { formato, origem };
+
+  // Atualiza label do formato
+  const formatoLabels = { excel: '📊 Excel (.xlsx)', txt: '📄 Texto (.txt)', pdf: '📑 PDF (.pdf)' };
+  document.getElementById('export-modal-formato-label').textContent = `Formato: ${formatoLabels[formato] || formato}`;
+
+  // Preenche o grid de campos
+  const campos = origem === 'suporte' ? camposSuporte : camposImplantacoes;
+  const grid = document.getElementById('export-campos-grid');
+  grid.innerHTML = '';
+
+  campos.forEach((campo, i) => {
+    const div = document.createElement('label');
+    div.className = 'export-campo-item';
+    div.innerHTML = `
+      <input type="checkbox" class="export-campo-check" data-key="${campo.key}" checked onchange="atualizarContadorCampos()" />
+      <div class="export-campo-info">
+        <span class="export-campo-icon">${campo.icon}</span>
+        <span class="export-campo-label">${campo.label}</span>
+      </div>
+    `;
+    grid.appendChild(div);
+  });
+
+  // Marca "Relatório completo"
+  document.getElementById('export-completo-check').checked = true;
+  atualizarContadorCampos();
+
+  abrirModal('modal-export-campos');
+}
+
+function fecharModalExportCampos() {
+  fecharModal('modal-export-campos');
+  exportPendente = { formato: null, origem: null };
+}
+
+function toggleRelatorioCompleto(checked) {
+  document.querySelectorAll('.export-campo-check').forEach(cb => {
+    cb.checked = checked;
+    // Atualiza visual do item pai
+    cb.closest('.export-campo-item').classList.toggle('unchecked', !checked);
+  });
+  atualizarContadorCampos();
+}
+
+function atualizarContadorCampos() {
+  const checkboxes = document.querySelectorAll('.export-campo-check');
+  const total = checkboxes.length;
+  const selecionados = [...checkboxes].filter(cb => cb.checked).length;
+
+  // Atualiza o label do "Relatório completo" sem disparar onchange
+  const compleCheck = document.getElementById('export-completo-check');
+  compleCheck.checked = selecionados === total;
+
+  // Atualiza visual dos itens
+  checkboxes.forEach(cb => {
+    cb.closest('.export-campo-item').classList.toggle('unchecked', !cb.checked);
+  });
+
+  // Atualiza o toggle visual
+  const toggle = document.getElementById('export-toggle-completo');
+  toggle.classList.toggle('partial', selecionados > 0 && selecionados < total);
+
+  // Atualiza contador
+  const counter = document.getElementById('export-campos-counter');
+  counter.innerHTML = `<span>${selecionados}</span> de ${total} campos selecionados`;
+
+  // Desabilita botão se nenhum campo selecionado
+  document.getElementById('btn-confirmar-export').disabled = selecionados === 0;
+}
+
+function getCamposSelecionados() {
+  return [...document.querySelectorAll('.export-campo-check:checked')].map(cb => cb.dataset.key);
+}
+
+function confirmarExportacao() {
+  const { formato, origem } = exportPendente;
+  const camposSel = getCamposSelecionados();
+
+  if (camposSel.length === 0) {
+    showToast('Selecione pelo menos um campo para exportar.', 'error');
+    return;
+  }
+
+  fecharModalExportCampos();
+
+  if (origem === 'suporte') {
+    executarExportSuporte(formato, camposSel);
+  } else {
+    executarExportImplantacoes(formato, camposSel);
+  }
+}
+
 // ---- Implantações ----
-function dadosImplantacoesParaExport() {
-  return filteredRecords.map(r => ({
-    'Tipo':                tipoLabel(r.tipo),
-    'Cliente':             clienteDisplay(r),
-    'Loja':                r.nome_loja || '',
-    'Data Inauguração':    formatarData(r.data_inauguracao),
-    'Responsável Técnico': r.responsavel_tecnico || '',
-    'Status':              statusLabel(r.status),
-    'Telefone':            r.telefone || '',
-    'Observação':          r.observacao || '',
-  }));
+function dadosImplantacoesParaExport(camposSel) {
+  return filteredRecords.map(r => {
+    const full = {
+      'Tipo':                tipoLabel(r.tipo),
+      'Cliente':             clienteDisplay(r),
+      'Loja':                r.nome_loja || '',
+      'Data Inauguração':    formatarData(r.data_inauguracao),
+      'Responsável Técnico': r.responsavel_tecnico || '',
+      'Status':              statusLabel(r.status),
+      'Telefone':            r.telefone || '',
+      'Observação':          r.observacao || '',
+    };
+    // Filtra apenas os campos selecionados
+    const filtered = {};
+    camposSel.forEach(key => {
+      if (key in full) filtered[key] = full[key];
+    });
+    return filtered;
+  });
 }
 
 function exportarImplantacoes(formato) {
-  fecharExportMenus();
-  const dados = dadosImplantacoesParaExport();
+  abrirModalExportCampos(formato, 'implantacoes');
+}
+
+function executarExportImplantacoes(formato, camposSel) {
+  const dados = dadosImplantacoesParaExport(camposSel);
   if (dados.length === 0) {
     showToast('Nenhum registro para exportar.', 'error');
     return;
@@ -1238,7 +1373,7 @@ function exportarImplantacoes(formato) {
 }
 
 // ---- Suporte ----
-function dadosSuporteParaExport() {
+function dadosSuporteParaExport(camposSel) {
   // Pega os dados já renderizados na tabela de suporte
   const tbody = document.getElementById('suporte-table-body');
   if (!tbody) return [];
@@ -1247,7 +1382,7 @@ function dadosSuporteParaExport() {
   rows.forEach(tr => {
     const cells = tr.querySelectorAll('td');
     if (cells.length >= 11) {
-      dados.push({
+      const full = {
         'Tipo':                cells[0].textContent.trim(),
         'Cliente':             cells[1].textContent.trim(),
         'Loja':                cells[2].textContent.trim(),
@@ -1259,15 +1394,24 @@ function dadosSuporteParaExport() {
         'Responsável':         cells[8].textContent.trim(),
         'Telefone':            cells[9].textContent.trim(),
         'Observação':          cells[10].textContent.trim(),
+      };
+      // Filtra apenas os campos selecionados
+      const filtered = {};
+      camposSel.forEach(key => {
+        if (key in full) filtered[key] = full[key];
       });
+      dados.push(filtered);
     }
   });
   return dados;
 }
 
 function exportarSuporte(formato) {
-  fecharExportMenus();
-  const dados = dadosSuporteParaExport();
+  abrirModalExportCampos(formato, 'suporte');
+}
+
+function executarExportSuporte(formato, camposSel) {
+  const dados = dadosSuporteParaExport(camposSel);
   if (dados.length === 0) {
     showToast('Nenhum registro para exportar.', 'error');
     return;

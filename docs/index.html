@@ -820,6 +820,58 @@
     </div>
   </div>
 
+  <!-- ═══════════════════ MODAL SELEÇÃO DE CAMPOS (EXPORTAÇÃO) ═══════════════════════ -->
+  <div id="modal-export-campos" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-export-title">
+    <div class="modal-box modal-box-export">
+      <div class="modal-header modal-header-export">
+        <div style="display:flex; align-items:center; gap:12px;">
+          <div class="export-modal-icon">
+            <i data-lucide="file-check"></i>
+          </div>
+          <div>
+            <h2 class="modal-title" id="modal-export-title">Selecionar Campos para Exportação</h2>
+            <p class="export-modal-subtitle" id="export-modal-formato-label">Formato: —</p>
+          </div>
+        </div>
+        <button class="modal-close" onclick="fecharModalExportCampos()" aria-label="Fechar">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Toggle Relatório Completo -->
+        <label class="export-toggle-completo" id="export-toggle-completo">
+          <input type="checkbox" id="export-completo-check" checked onchange="toggleRelatorioCompleto(this.checked)" />
+          <div class="export-toggle-content">
+            <div class="export-toggle-icon">
+              <i data-lucide="check-circle-2"></i>
+            </div>
+            <div>
+              <strong>Relatório Completo</strong>
+              <span>Exportar todos os campos disponíveis</span>
+            </div>
+          </div>
+        </label>
+
+        <!-- Lista de campos com checkboxes -->
+        <div class="export-campos-grid" id="export-campos-grid">
+          <!-- Campos preenchidos dinamicamente via JS -->
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <span class="export-campos-counter" id="export-campos-counter">0 campos selecionados</span>
+        <div style="display:flex; gap:10px;">
+          <button type="button" class="btn-ghost" onclick="fecharModalExportCampos()">Cancelar</button>
+          <button type="button" class="btn-primary" id="btn-confirmar-export" onclick="confirmarExportacao()">
+            <i data-lucide="download"></i>
+            Exportar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script src="app.js"></script>
 </body>
 </html>

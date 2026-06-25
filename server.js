@@ -608,6 +608,23 @@ app.delete('/api/responsaveis/:id', requireAuth, async (req, res) => {
   }
 });
 
+// ─────────────────────────────────────────────────────────────────
+// POST /api/webhook/ummense — Rota "Espiã" (Fase 1)
+// Objetivo: Apenas imprimir no console o que a Ummense envia
+// ─────────────────────────────────────────────────────────────────
+app.post('/api/webhook/ummense', (req, res) => {
+  console.log('\n======================================================');
+  console.log('🚨 WEBHOOK UMMENSE RECEBIDO!');
+  console.log('🗓️ Data:', new Date().toISOString());
+  console.log('📦 Headers:', JSON.stringify(req.headers, null, 2));
+  console.log('📦 Payload (Corpo da Requisição):');
+  console.log(JSON.stringify(req.body, null, 2));
+  console.log('======================================================\n');
+  
+  // Responde OK rapidamente para a Ummense saber que chegou
+  res.status(200).send('Webhook recebido com sucesso (Log gravado no console)');
+});
+
 // ─── ROTA RAIZ: redireciona para login ───────────────────────────
 app.get('/', (req, res) => {
   if (req.session && req.session.loggedIn) {
