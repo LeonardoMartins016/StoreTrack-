@@ -6,24 +6,24 @@
 'use strict';
 
 // ─── ESTADO GLOBAL ─────────────────────────────────────────────
-let allRecords      = [];
+let allRecords = [];
 let filteredRecords = [];
-let sortState       = { col: null, dir: 'asc' };
-let editingId       = null;
-let deletingId      = null;
-let currentTipo     = 'escalada';
-let abaAtiva        = 'implantacoes';
+let sortState = { col: null, dir: 'asc' };
+let editingId = null;
+let deletingId = null;
+let currentTipo = 'escalada';
+let abaAtiva = 'implantacoes';
 
 // Responsáveis técnicos
 let listaResponsaveis = [];
-let editingRespId     = null;
-let deletingRespId    = null;
+let editingRespId = null;
+let deletingRespId = null;
 
 // ID pendente para inauguração (vindo do dropdown de status)
-let inaugurandoId   = null;
+let inaugurandoId = null;
 
 // ─── PORTAL DROPDOWN (status) ───────────────────────────────────
-let portalDD       = null;
+let portalDD = null;
 let portalTargetId = null;
 
 function criarPortalDropdown() {
@@ -75,8 +75,8 @@ function abrirPortalDropdown(e, id) {
 
   portalTargetId = id;
 
-  const rect     = e.currentTarget.getBoundingClientRect();
-  const ddWidth  = 180;
+  const rect = e.currentTarget.getBoundingClientRect();
+  const ddWidth = 180;
   const ddHeight = 122;
 
   const spaceBelow = window.innerHeight - rect.bottom;
@@ -89,8 +89,8 @@ function abrirPortalDropdown(e, id) {
     left = window.innerWidth - ddWidth - 8;
   }
 
-  portalDD.style.top     = top  + 'px';
-  portalDD.style.left    = left + 'px';
+  portalDD.style.top = top + 'px';
+  portalDD.style.left = left + 'px';
   portalDD.style.display = 'block';
 }
 
@@ -118,7 +118,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Fecha dropdown ao clicar fora
   document.addEventListener('click', (e) => {
     if (!e.target.closest('.status-dropdown-portal') &&
-        !e.target.closest('.status-btn')) {
+      !e.target.closest('.status-btn')) {
       fecharPortalDropdown();
     }
     // Fecha menus de exportação ao clicar fora
@@ -176,7 +176,7 @@ async function api(method, path, body) {
     headers: { 'Content-Type': 'application/json' },
   };
   if (body) opts.body = JSON.stringify(body);
-  const res  = await fetch(path, opts);
+  const res = await fetch(path, opts);
   if (res.status === 401) {
     location.replace('/login.html');
     throw new Error('Sessão expirada.');
@@ -206,24 +206,24 @@ function atualizarCards() {
   const anoMes = `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, '0')}`;
   const estesMes = allRecords.filter(r => r.data_inauguracao && r.data_inauguracao.startsWith(anoMes)).length;
 
-  const hoje      = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate());
+  const hoje = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate());
   const diaSemana = hoje.getDay() === 0 ? 6 : hoje.getDay() - 1;
-  const segunda   = new Date(hoje); segunda.setDate(hoje.getDate() - diaSemana);
-  const domingo   = new Date(segunda); domingo.setDate(segunda.getDate() + 6);
-  const isoSeg    = segunda.toISOString().slice(0, 10);
-  const isoDom    = domingo.toISOString().slice(0, 10);
+  const segunda = new Date(hoje); segunda.setDate(hoje.getDate() - diaSemana);
+  const domingo = new Date(segunda); domingo.setDate(segunda.getDate() + 6);
+  const isoSeg = segunda.toISOString().slice(0, 10);
+  const isoDom = domingo.toISOString().slice(0, 10);
   const essaSemana = allRecords.filter(r => r.data_inauguracao >= isoSeg && r.data_inauguracao <= isoDom).length;
 
   const emAndamento = allRecords.filter(r => r.status === 'em_andamento').length;
   const inaugurados = allRecords.filter(r => r.status === 'inaugurado').length;
-  const parados     = allRecords.filter(r => r.status === 'parado').length;
+  const parados = allRecords.filter(r => r.status === 'parado').length;
 
-  animarNumero('val-total',       total);
-  animarNumero('val-mes',         estesMes);
-  animarNumero('val-semana',      essaSemana);
-  animarNumero('val-andamento',   emAndamento);
+  animarNumero('val-total', total);
+  animarNumero('val-mes', estesMes);
+  animarNumero('val-semana', essaSemana);
+  animarNumero('val-andamento', emAndamento);
   animarNumero('val-inaugurados', inaugurados);
-  animarNumero('val-parados',     parados);
+  animarNumero('val-parados', parados);
 }
 
 // ─── ABA ALERTAS ──────────────────────────────────────────────────
@@ -245,10 +245,10 @@ function atualizarAlertas() {
   if (abaAtiva === 'alertas') {
     const tbody = document.getElementById('alertas-table-body');
     const counter = document.getElementById('alertas-table-counter');
-    
+
     if (alertas.length === 0) {
       counter.textContent = 'Nenhum alerta pendente.';
-      tbody.innerHTML = \`
+      tbody.innerHTML = `
         <tr class="empty-row">
           <td colspan="6">
             <div class="empty-state">
@@ -256,24 +256,24 @@ function atualizarAlertas() {
               <p>Todos os clientes concluídos já foram inaugurados!</p>
             </div>
           </td>
-        </tr>\`;
+        </tr>`;
     } else {
-      counter.textContent = \`\${alertas.length} registro(s) exigem ação\`;
+      counter.textContent = `${alertas.length} registro(s) exigem ação`;
       tbody.innerHTML = '';
       alertas.forEach(r => {
         const tr = document.createElement('tr');
-        tr.innerHTML = \`
-          <td>\${badgeTipo(r.tipo)}</td>
-          <td>\${escHtml(clienteDisplay(r))}</td>
-          <td>\${escHtml(r.nome_loja || '—')}</td>
-          <td>\${formatarData(r.data_inauguracao)}</td>
-          <td>\${renderStatusBtn(r)}</td>
+        tr.innerHTML = `
+          <td>${badgeTipo(r.tipo)}</td>
+          <td>${escHtml(clienteDisplay(r))}</td>
+          <td>${escHtml(r.nome_loja || '—')}</td>
+          <td>${formatarData(r.data_inauguracao)}</td>
+          <td>${renderStatusBtn(r)}</td>
           <td>
-            <button class="btn-primary" style="padding:4px 10px; font-size:13px;" onclick="fecharPortalDropdown(); abrirModalInauguracao(\${r.id})">
+            <button class="btn-primary" style="padding:4px 10px; font-size:13px;" onclick="fecharPortalDropdown(); abrirModalInauguracao(${r.id})">
               <i data-lucide="zap"></i> Inaugurar
             </button>
           </td>
-        \`;
+        `;
         tbody.appendChild(tr);
       });
     }
@@ -373,7 +373,7 @@ function filtrarSemana() {
   document.getElementById('f-data-ate').value = isoDom;
 
   aplicarFiltros();
-  showToast(`📅 Filtrando inaugurações da semana (${formatarData(isoSeg)} a ${formatarData(isoDom)})`, 'info');
+  showToast(`📅 Filtrando inaugurações da semana(${ formatarData(isoSeg) } a ${ formatarData(isoDom) })`, 'info');
 
   // Scroll suave até os filtros
   document.querySelector('.filters-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -406,7 +406,7 @@ function filtrarStatus(status) {
   
   aplicarFiltros();
   const labels = { 'em_andamento': 'Em Andamento', 'inaugurado': 'Inaugurados', 'parado': 'Parados' };
-  showToast(`Filtrando por status: ${labels[status]}`, 'info');
+  showToast(`Filtrando por status: ${ labels[status] } `, 'info');
   document.querySelector('.filters-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
@@ -472,14 +472,14 @@ function renderizarTabela() {
 
   if (filteredRecords.length === 0) {
     tbody.innerHTML = `
-      <tr class="empty-row">
-        <td colspan="9">
-          <div class="empty-state">
-            <i data-lucide="search-x" class="empty-icon"></i>
-            <p>Nenhum registro encontrado</p>
-          </div>
-        </td>
-      </tr>`;
+        < tr class="empty-row" >
+          <td colspan="9">
+            <div class="empty-state">
+              <i data-lucide="search-x" class="empty-icon"></i>
+              <p>Nenhum registro encontrado</p>
+            </div>
+          </td>
+      </tr > `;
     lucide.createIcons();
     return;
   }
@@ -490,7 +490,7 @@ function renderizarTabela() {
     const obs = r.observacao || '';
     const obsShort = obs.length > 55 ? obs.slice(0, 55) + '…' : obs;
     tr.innerHTML = `
-      <td data-label="Tipo">${badgeTipo(r.tipo)}</td>
+        < td data - label="Tipo" > ${ badgeTipo(r.tipo) }</td >
       <td data-label="Cliente">${escHtml(clienteDisplay(r))}</td>
       <td data-label="Loja">${escHtml(r.nome_loja || '—')}</td>
       <td data-label="Inauguração" style="white-space:nowrap">${formatarData(r.data_inauguracao)}</td>
@@ -511,7 +511,7 @@ function renderizarTabela() {
           </button>
         </div>
       </td>
-    `;
+      `;
     tbody.appendChild(tr);
   });
 
@@ -521,13 +521,13 @@ function renderizarTabela() {
 function atualizarContador() {
   const el = document.getElementById('table-counter');
   const n  = filteredRecords.length;
-  el.innerHTML = `<span>${n}</span> registro${n !== 1 ? 's' : ''} encontrado${n !== 1 ? 's' : ''}`;
+  el.innerHTML = `< span > ${ n }</span > registro${ n !== 1 ? 's' : '' } encontrado${ n !== 1 ? 's' : '' } `;
 }
 
 // ─── HELPERS DE DISPLAY ───────────────────────────────────────────
 function clienteDisplay(r) {
   if (r.tipo === 'troca_titularidade') {
-    return `${r.nome_cliente_antigo || '?'} → ${r.nome_cliente_novo || '?'}`;
+    return `${ r.nome_cliente_antigo || '?' } → ${ r.nome_cliente_novo || '?' } `;
   }
   return r.nome_cliente || '—';
 }
@@ -535,7 +535,7 @@ function clienteDisplay(r) {
 function formatarData(iso) {
   if (!iso) return '—';
   const [y, m, d] = iso.split('-');
-  return `${d}/${m}/${y}`;
+  return `${ d } /${m}/${ y } `;
 }
 
 function diasDesde(iso) {
@@ -561,7 +561,7 @@ function badgeTipo(tipo) {
     troca_titularidade: ['badge-troca',       '🔄 Troca de Titularidade'],
   };
   const [cls, label] = map[tipo] || ['badge-escalada', tipo];
-  return `<span class="badge ${cls}">${label}</span>`;
+  return `< span class="badge ${cls}" > ${ label }</span > `;
 }
 
 // ─── STATUS BOTÃO (abre portal dropdown) ──────────────────────────
@@ -573,334 +573,334 @@ function renderStatusBtn(r) {
   };
   const [emoji, label] = map[r.status] || ['⚪', r.status];
   return `
-    <div class="status-select-wrap">
-      <button class="status-btn ${r.status}" onclick="abrirPortalDropdown(event, ${r.id})">
-        ${emoji} ${label} <i data-lucide="chevron-down"></i>
-      </button>
-    </div>`;
+        < div class="status-select-wrap" >
+          <button class="status-btn ${r.status}" onclick="abrirPortalDropdown(event, ${r.id})">
+            ${emoji} ${label} <i data-lucide="chevron-down"></i>
+          </button>
+    </div > `;
 }
 
 // ─── MUDAR STATUS ─────────────────────────────────────────────────
 async function mudarStatus(id, novoStatus) {
   try {
-    const updated = await api('PATCH', `/api/implantacoes/${id}/status`, { status: novoStatus });
-    const idx = allRecords.findIndex(r => r.id === id);
-    if (idx !== -1) allRecords[idx] = updated;
-    aplicarFiltros();
-    atualizarCards();
-    atualizarAlertas();
-    showToast('Status atualizado!', 'success');
-  } catch (e) {
-    showToast('Erro: ' + e.message, 'error');
-  }
-}
-
-// ─── MODAL DE INAUGURAÇÃO ─────────────────────────────────────────
-function abrirModalInauguracao(id) {
-  inaugurandoId = id;
-  const r = allRecords.find(x => x.id === id);
-  if (!r) return;
-
-  document.getElementById('inaug-id').value = id;
-  document.getElementById('inaug-cliente-display').textContent = clienteDisplay(r);
-
-  // Preenche com dados existentes se já inaugurado antes
-  document.getElementById('inaug-data').value          = r.data_inauguracao || ''; // Sincroniza a data
-  document.getElementById('inaug-servidor').value      = r.servidor              || '';
-  document.getElementById('inaug-login').value         = r.login_loja_express    || '';
-  document.getElementById('inaug-senha').value         = r.senha_loja_express    || '';
-  document.getElementById('inaug-telefone').value      = r.telefone              || '';
-  document.getElementById('inaug-cupom').value         = r.emite_cupom_fiscal    || '';
-  document.getElementById('inaug-chamado').checked     = !!r.abriu_chamado_teste;
-  document.getElementById('inaug-observacao').value    = r.observacao            || '';
-
-  abrirModal('modal-inauguracao');
-}
-
-function fecharModalInauguracao() {
-  inaugurandoId = null;
-  fecharModal('modal-inauguracao');
-}
-
-async function confirmarInauguracao() {
-  const id      = document.getElementById('inaug-id').value;
-  const data    = document.getElementById('inaug-data').value;
-  const servidor= document.getElementById('inaug-servidor').value;
-  const login   = document.getElementById('inaug-login').value.trim();
-  const senha   = document.getElementById('inaug-senha').value.trim();
-  const telefone= document.getElementById('inaug-telefone').value.trim();
-  const cupom   = document.getElementById('inaug-cupom').value;
-  const chamado = document.getElementById('inaug-chamado').checked;
-
-  // Validação
-  let ok = true;
-  const checkRequired = (fieldId, val) => {
-    if (!val) {
-      document.getElementById(fieldId).classList.add('error');
-      ok = false;
-    } else {
-      document.getElementById(fieldId).classList.remove('error');
+    const updated = await api('PATCH', `/ api / implantacoes / ${ id }/status`, { status: novoStatus });
+      const idx = allRecords.findIndex(r => r.id === id);
+      if (idx !== -1) allRecords[idx] = updated;
+      aplicarFiltros();
+      atualizarCards();
+      atualizarAlertas();
+      showToast('Status atualizado!', 'success');
+    } catch (e) {
+      showToast('Erro: ' + e.message, 'error');
     }
-  };
-
-  checkRequired('inaug-data', data);
-  checkRequired('inaug-servidor', servidor);
-  checkRequired('inaug-login', login);
-  checkRequired('inaug-senha', senha);
-  checkRequired('inaug-telefone', telefone);
-  checkRequired('inaug-cupom', cupom);
-
-  if (!ok) {
-    showToast('Preencha os campos obrigatórios.', 'error');
-    return;
   }
 
-  const btn = document.getElementById('btn-confirmar-inauguracao');
-  btn.disabled = true;
-  btn.innerHTML = '<i data-lucide="loader-2" class="spinning"></i> Confirmando...';
-  lucide.createIcons();
+  // ─── MODAL DE INAUGURAÇÃO ─────────────────────────────────────────
+  function abrirModalInauguracao(id) {
+    inaugurandoId = id;
+    const r = allRecords.find(x => x.id === id);
+    if (!r) return;
 
-  try {
-    const updated = await api('PATCH', `/api/implantacoes/${id}/inaugurar`, {
-      data_inauguracao_real: data,
-      servidor,
-      login_loja_express: login,
-      senha_loja_express: senha,
-      telefone,
-      emite_cupom_fiscal: cupom,
-      abriu_chamado_teste: chamado,
-      observacao: document.getElementById('inaug-observacao').value.trim() || null,
+    document.getElementById('inaug-id').value = id;
+    document.getElementById('inaug-cliente-display').textContent = clienteDisplay(r);
+
+    // Preenche com dados existentes se já inaugurado antes
+    document.getElementById('inaug-data').value = r.data_inauguracao || ''; // Sincroniza a data
+    document.getElementById('inaug-servidor').value = r.servidor || '';
+    document.getElementById('inaug-login').value = r.login_loja_express || '';
+    document.getElementById('inaug-senha').value = r.senha_loja_express || '';
+    document.getElementById('inaug-telefone').value = r.telefone || '';
+    document.getElementById('inaug-cupom').value = r.emite_cupom_fiscal || '';
+    document.getElementById('inaug-chamado').checked = !!r.abriu_chamado_teste;
+    document.getElementById('inaug-observacao').value = r.observacao || '';
+
+    abrirModal('modal-inauguracao');
+  }
+
+  function fecharModalInauguracao() {
+    inaugurandoId = null;
+    fecharModal('modal-inauguracao');
+  }
+
+  async function confirmarInauguracao() {
+    const id = document.getElementById('inaug-id').value;
+    const data = document.getElementById('inaug-data').value;
+    const servidor = document.getElementById('inaug-servidor').value;
+    const login = document.getElementById('inaug-login').value.trim();
+    const senha = document.getElementById('inaug-senha').value.trim();
+    const telefone = document.getElementById('inaug-telefone').value.trim();
+    const cupom = document.getElementById('inaug-cupom').value;
+    const chamado = document.getElementById('inaug-chamado').checked;
+
+    // Validação
+    let ok = true;
+    const checkRequired = (fieldId, val) => {
+      if (!val) {
+        document.getElementById(fieldId).classList.add('error');
+        ok = false;
+      } else {
+        document.getElementById(fieldId).classList.remove('error');
+      }
+    };
+
+    checkRequired('inaug-data', data);
+    checkRequired('inaug-servidor', servidor);
+    checkRequired('inaug-login', login);
+    checkRequired('inaug-senha', senha);
+    checkRequired('inaug-telefone', telefone);
+    checkRequired('inaug-cupom', cupom);
+
+    if (!ok) {
+      showToast('Preencha os campos obrigatórios.', 'error');
+      return;
+    }
+
+    const btn = document.getElementById('btn-confirmar-inauguracao');
+    btn.disabled = true;
+    btn.innerHTML = '<i data-lucide="loader-2" class="spinning"></i> Confirmando...';
+    lucide.createIcons();
+
+    try {
+      const updated = await api('PATCH', `/api/implantacoes/${id}/inaugurar`, {
+        data_inauguracao_real: data,
+        servidor,
+        login_loja_express: login,
+        senha_loja_express: senha,
+        telefone,
+        emite_cupom_fiscal: cupom,
+        abriu_chamado_teste: chamado,
+        observacao: document.getElementById('inaug-observacao').value.trim() || null,
+      });
+
+      const idx = allRecords.findIndex(r => r.id === Number(id));
+      if (idx !== -1) allRecords[idx] = updated;
+
+      fecharModalInauguracao();
+      aplicarFiltros();
+      atualizarCards();
+      atualizarAlertas();
+      showToast('🎉 Inauguração confirmada com sucesso!', 'success');
+    } catch (e) {
+      showToast('Erro ao confirmar: ' + e.message, 'error');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '<i data-lucide="rocket"></i> Confirmar Inauguração';
+      lucide.createIcons();
+    }
+  }
+
+  // ─── CHANGE STATUS NO FORM (para novo cadastro/edição) ─────────────
+  function onStatusFormChange(val) {
+    // No form de cadastro/edição, se o usuário selecionar "inaugurado"
+    // não fazemos nada especial - o modal de inauguração só aparece
+    // quando se muda pelo dropdown da tabela.
+    // O status pode ser salvo normalmente pelo form de edição.
+  }
+
+  // ─── MODAL CADASTRO ───────────────────────────────────────────────
+  function abrirModalCadastro() {
+    editingId = null;
+    document.getElementById('modal-title').textContent = 'Novo Cadastro';
+    document.getElementById('form-cadastro').reset();
+    document.getElementById('edit-id').value = '';
+
+    // Bloquear opção de Inaugurado no cadastro novo
+    const optInaugurado = document.querySelector('#status-form option[value="inaugurado"]');
+    if (optInaugurado) {
+      optInaugurado.disabled = true;
+      optInaugurado.textContent = '🟢 Inaugurado (use botão da tabela)';
+    }
+
+    selecionarTipo('escalada');
+    popularSelectResponsaveis();
+    abrirModal('modal-cadastro');
+  }
+
+  async function abrirModalEdicao(id) {
+    editingId = id;
+    const r = allRecords.find(x => x.id === id);
+    if (!r) return;
+
+    document.getElementById('modal-title').textContent = 'Editar Cadastro';
+    document.getElementById('edit-id').value = id;
+
+    selecionarTipo(r.tipo);
+    popularSelectResponsaveis(r.responsavel_tecnico);
+
+    document.getElementById('nome-cliente').value = r.nome_cliente || '';
+    document.getElementById('nome-cliente-antigo').value = r.nome_cliente_antigo || '';
+    document.getElementById('nome-cliente-novo').value = r.nome_cliente_novo || '';
+    document.getElementById('nome-loja').value = r.nome_loja || '';
+    document.getElementById('data-inauguracao').value = r.data_inauguracao || '';
+    document.getElementById('telefone').value = r.telefone || '';
+    document.getElementById('observacao').value = r.observacao || '';
+
+    // Bloquear opção de Inaugurado se não estiver inaugurado
+    const optInaugurado = document.querySelector('#status-form option[value="inaugurado"]');
+    if (r.status !== 'inaugurado' && optInaugurado) {
+      optInaugurado.disabled = true;
+      optInaugurado.textContent = '🟢 Inaugurado (use botão da tabela)';
+    } else if (optInaugurado) {
+      optInaugurado.disabled = false;
+      optInaugurado.textContent = '🟢 Inaugurado';
+    }
+    document.getElementById('status-form').value = r.status || 'parado';
+
+    abrirModal('modal-cadastro');
+  }
+
+  function fecharModalCadastro() {
+    fecharModal('modal-cadastro');
+    limparErros();
+  }
+
+  function selecionarTipo(tipo) {
+    currentTipo = tipo;
+
+    ['escalada', 'cliente_novo', 'troca_titularidade'].forEach(t => {
+      document.getElementById(`tipo-${t}`).classList.toggle('active', t === tipo);
     });
 
-    const idx = allRecords.findIndex(r => r.id === Number(id));
-    if (idx !== -1) allRecords[idx] = updated;
+    const fg = (id, show) => document.getElementById(id).classList.toggle('hidden', !show);
+    fg('fg-nome-cliente', tipo !== 'troca_titularidade');
+    fg('fg-nome-cliente-antigo', tipo === 'troca_titularidade');
+    fg('fg-nome-cliente-novo', tipo === 'troca_titularidade');
+    fg('fg-nome-loja', tipo !== 'cliente_novo');
 
-    fecharModalInauguracao();
-    aplicarFiltros();
-    atualizarCards();
-    atualizarAlertas();
-    showToast('🎉 Inauguração confirmada com sucesso!', 'success');
-  } catch (e) {
-    showToast('Erro ao confirmar: ' + e.message, 'error');
-  } finally {
-    btn.disabled = false;
-    btn.innerHTML = '<i data-lucide="rocket"></i> Confirmar Inauguração';
-    lucide.createIcons();
-  }
-}
-
-// ─── CHANGE STATUS NO FORM (para novo cadastro/edição) ─────────────
-function onStatusFormChange(val) {
-  // No form de cadastro/edição, se o usuário selecionar "inaugurado"
-  // não fazemos nada especial - o modal de inauguração só aparece
-  // quando se muda pelo dropdown da tabela.
-  // O status pode ser salvo normalmente pelo form de edição.
-}
-
-// ─── MODAL CADASTRO ───────────────────────────────────────────────
-function abrirModalCadastro() {
-  editingId = null;
-  document.getElementById('modal-title').textContent = 'Novo Cadastro';
-  document.getElementById('form-cadastro').reset();
-  document.getElementById('edit-id').value = '';
-  
-  // Bloquear opção de Inaugurado no cadastro novo
-  const optInaugurado = document.querySelector('#status-form option[value="inaugurado"]');
-  if (optInaugurado) {
-    optInaugurado.disabled = true;
-    optInaugurado.textContent = '🟢 Inaugurado (use botão da tabela)';
+    limparErros();
   }
 
-  selecionarTipo('escalada');
-  popularSelectResponsaveis();
-  abrirModal('modal-cadastro');
-}
+  function validarFormulario() {
+    limparErros();
+    let valido = true;
 
-async function abrirModalEdicao(id) {
-  editingId = id;
-  const r = allRecords.find(x => x.id === id);
-  if (!r) return;
+    const obrigatorio = (id) => {
+      const el = document.getElementById(id);
+      if (!el.value.trim()) {
+        el.classList.add('error');
+        valido = false;
+      }
+    };
 
-  document.getElementById('modal-title').textContent = 'Editar Cadastro';
-  document.getElementById('edit-id').value = id;
-
-  selecionarTipo(r.tipo);
-  popularSelectResponsaveis(r.responsavel_tecnico);
-
-  document.getElementById('nome-cliente').value         = r.nome_cliente        || '';
-  document.getElementById('nome-cliente-antigo').value  = r.nome_cliente_antigo || '';
-  document.getElementById('nome-cliente-novo').value    = r.nome_cliente_novo   || '';
-  document.getElementById('nome-loja').value            = r.nome_loja           || '';
-  document.getElementById('data-inauguracao').value     = r.data_inauguracao    || '';
-  document.getElementById('telefone').value             = r.telefone            || '';
-  document.getElementById('observacao').value           = r.observacao          || '';
-
-  // Bloquear opção de Inaugurado se não estiver inaugurado
-  const optInaugurado = document.querySelector('#status-form option[value="inaugurado"]');
-  if (r.status !== 'inaugurado' && optInaugurado) {
-    optInaugurado.disabled = true;
-    optInaugurado.textContent = '🟢 Inaugurado (use botão da tabela)';
-  } else if (optInaugurado) {
-    optInaugurado.disabled = false;
-    optInaugurado.textContent = '🟢 Inaugurado';
-  }
-  document.getElementById('status-form').value = r.status || 'parado';
-
-  abrirModal('modal-cadastro');
-}
-
-function fecharModalCadastro() {
-  fecharModal('modal-cadastro');
-  limparErros();
-}
-
-function selecionarTipo(tipo) {
-  currentTipo = tipo;
-
-  ['escalada', 'cliente_novo', 'troca_titularidade'].forEach(t => {
-    document.getElementById(`tipo-${t}`).classList.toggle('active', t === tipo);
-  });
-
-  const fg = (id, show) => document.getElementById(id).classList.toggle('hidden', !show);
-  fg('fg-nome-cliente',        tipo !== 'troca_titularidade');
-  fg('fg-nome-cliente-antigo', tipo === 'troca_titularidade');
-  fg('fg-nome-cliente-novo',   tipo === 'troca_titularidade');
-  fg('fg-nome-loja',           tipo !== 'cliente_novo');
-
-  limparErros();
-}
-
-function validarFormulario() {
-  limparErros();
-  let valido = true;
-
-  const obrigatorio = (id) => {
-    const el = document.getElementById(id);
-    if (!el.value.trim()) {
-      el.classList.add('error');
-      valido = false;
-    }
-  };
-
-  if (currentTipo === 'troca_titularidade') {
-    obrigatorio('nome-cliente-antigo');
-    obrigatorio('nome-cliente-novo');
-    obrigatorio('nome-loja');
-  } else if (currentTipo === 'escalada') {
-    obrigatorio('nome-cliente');
-    obrigatorio('nome-loja');
-  } else {
-    obrigatorio('nome-cliente');
-  }
-
-  obrigatorio('data-inauguracao');
-  obrigatorio('responsavel-tecnico');
-
-  return valido;
-}
-
-function limparErros() {
-  document.querySelectorAll('.form-input.error').forEach(el => el.classList.remove('error'));
-}
-
-async function salvarCadastro() {
-  if (!validarFormulario()) {
-    showToast('Preencha os campos obrigatórios.', 'error');
-    return;
-  }
-
-  const payload = {
-    tipo:                currentTipo,
-    nome_cliente:        document.getElementById('nome-cliente').value.trim()        || null,
-    nome_cliente_antigo: document.getElementById('nome-cliente-antigo').value.trim() || null,
-    nome_cliente_novo:   document.getElementById('nome-cliente-novo').value.trim()   || null,
-    nome_loja:           document.getElementById('nome-loja').value.trim()           || null,
-    data_inauguracao:    document.getElementById('data-inauguracao').value,
-    responsavel_tecnico: document.getElementById('responsavel-tecnico').value.trim(),
-    telefone:            document.getElementById('telefone').value.trim()            || null,
-    status:              document.getElementById('status-form').value,
-    observacao:          document.getElementById('observacao').value.trim()          || null,
-  };
-
-  const btn = document.getElementById('btn-salvar');
-  btn.disabled = true;
-  btn.innerHTML = '<i data-lucide="loader-2" class="spinning"></i> Salvando...';
-  lucide.createIcons();
-
-  try {
-    if (editingId) {
-      await api('PUT', `/api/implantacoes/${editingId}`, payload);
-      showToast('Cadastro atualizado com sucesso!', 'success');
+    if (currentTipo === 'troca_titularidade') {
+      obrigatorio('nome-cliente-antigo');
+      obrigatorio('nome-cliente-novo');
+      obrigatorio('nome-loja');
+    } else if (currentTipo === 'escalada') {
+      obrigatorio('nome-cliente');
+      obrigatorio('nome-loja');
     } else {
-      await api('POST', '/api/implantacoes', payload);
-      showToast('Cadastro realizado com sucesso!', 'success');
+      obrigatorio('nome-cliente');
     }
 
-    allRecords = await api('GET', '/api/implantacoes');
+    obrigatorio('data-inauguracao');
+    obrigatorio('responsavel-tecnico');
 
-    fecharModalCadastro();
-    aplicarFiltros();
-    atualizarCards();
-  } catch (e) {
-    showToast('Erro ao salvar: ' + e.message, 'error');
-  } finally {
-    btn.disabled = false;
-    btn.innerHTML = '<i data-lucide="save"></i> Salvar';
-    lucide.createIcons();
+    return valido;
   }
-}
 
-// ─── MODAL EXCLUIR ────────────────────────────────────────────────
-function abrirModalExcluir(id) {
-  deletingId = id;
-  const r = allRecords.find(x => x.id === id);
-  const nome = r ? clienteDisplay(r) : '';
-  document.getElementById('delete-confirm-name').textContent = nome;
-  abrirModal('modal-excluir');
-}
-
-function fecharModalExcluir() {
-  deletingId = null;
-  fecharModal('modal-excluir');
-}
-
-async function confirmarExclusao() {
-  if (!deletingId) return;
-
-  const btn = document.getElementById('btn-confirmar-excluir');
-  btn.disabled = true;
-  btn.innerHTML = '<i data-lucide="loader-2" class="spinning"></i> Excluindo...';
-  lucide.createIcons();
-
-  try {
-    await api('DELETE', `/api/implantacoes/${deletingId}`);
-    allRecords = allRecords.filter(r => r.id !== deletingId);
-    aplicarFiltros();
-    atualizarCards();
-    fecharModalExcluir();
-    showToast('Registro excluído com sucesso.', 'info');
-  } catch (e) {
-    showToast('Erro ao excluir: ' + e.message, 'error');
-  } finally {
-    btn.disabled = false;
-    btn.innerHTML = '<i data-lucide="trash-2"></i> Excluir';
-    lucide.createIcons();
+  function limparErros() {
+    document.querySelectorAll('.form-input.error').forEach(el => el.classList.remove('error'));
   }
-}
 
-// ─── ABA SUPORTE ──────────────────────────────────────────────────
-async function carregarSuporte() {
-  const nomeCliente = document.getElementById('s-cliente').value.trim();
-  const nomeLoja    = document.getElementById('s-loja').value.trim();
+  async function salvarCadastro() {
+    if (!validarFormulario()) {
+      showToast('Preencha os campos obrigatórios.', 'error');
+      return;
+    }
 
-  const params = new URLSearchParams();
-  if (nomeCliente) params.append('nome_cliente', nomeCliente);
-  if (nomeLoja)    params.append('nome_loja',    nomeLoja);
+    const payload = {
+      tipo: currentTipo,
+      nome_cliente: document.getElementById('nome-cliente').value.trim() || null,
+      nome_cliente_antigo: document.getElementById('nome-cliente-antigo').value.trim() || null,
+      nome_cliente_novo: document.getElementById('nome-cliente-novo').value.trim() || null,
+      nome_loja: document.getElementById('nome-loja').value.trim() || null,
+      data_inauguracao: document.getElementById('data-inauguracao').value,
+      responsavel_tecnico: document.getElementById('responsavel-tecnico').value.trim(),
+      telefone: document.getElementById('telefone').value.trim() || null,
+      status: document.getElementById('status-form').value,
+      observacao: document.getElementById('observacao').value.trim() || null,
+    };
 
-  const tbody  = document.getElementById('suporte-table-body');
-  const counter = document.getElementById('suporte-table-counter');
+    const btn = document.getElementById('btn-salvar');
+    btn.disabled = true;
+    btn.innerHTML = '<i data-lucide="loader-2" class="spinning"></i> Salvando...';
+    lucide.createIcons();
 
-  tbody.innerHTML = `
+    try {
+      if (editingId) {
+        await api('PUT', `/api/implantacoes/${editingId}`, payload);
+        showToast('Cadastro atualizado com sucesso!', 'success');
+      } else {
+        await api('POST', '/api/implantacoes', payload);
+        showToast('Cadastro realizado com sucesso!', 'success');
+      }
+
+      allRecords = await api('GET', '/api/implantacoes');
+
+      fecharModalCadastro();
+      aplicarFiltros();
+      atualizarCards();
+    } catch (e) {
+      showToast('Erro ao salvar: ' + e.message, 'error');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '<i data-lucide="save"></i> Salvar';
+      lucide.createIcons();
+    }
+  }
+
+  // ─── MODAL EXCLUIR ────────────────────────────────────────────────
+  function abrirModalExcluir(id) {
+    deletingId = id;
+    const r = allRecords.find(x => x.id === id);
+    const nome = r ? clienteDisplay(r) : '';
+    document.getElementById('delete-confirm-name').textContent = nome;
+    abrirModal('modal-excluir');
+  }
+
+  function fecharModalExcluir() {
+    deletingId = null;
+    fecharModal('modal-excluir');
+  }
+
+  async function confirmarExclusao() {
+    if (!deletingId) return;
+
+    const btn = document.getElementById('btn-confirmar-excluir');
+    btn.disabled = true;
+    btn.innerHTML = '<i data-lucide="loader-2" class="spinning"></i> Excluindo...';
+    lucide.createIcons();
+
+    try {
+      await api('DELETE', `/api/implantacoes/${deletingId}`);
+      allRecords = allRecords.filter(r => r.id !== deletingId);
+      aplicarFiltros();
+      atualizarCards();
+      fecharModalExcluir();
+      showToast('Registro excluído com sucesso.', 'info');
+    } catch (e) {
+      showToast('Erro ao excluir: ' + e.message, 'error');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '<i data-lucide="trash-2"></i> Excluir';
+      lucide.createIcons();
+    }
+  }
+
+  // ─── ABA SUPORTE ──────────────────────────────────────────────────
+  async function carregarSuporte() {
+    const nomeCliente = document.getElementById('s-cliente').value.trim();
+    const nomeLoja = document.getElementById('s-loja').value.trim();
+
+    const params = new URLSearchParams();
+    if (nomeCliente) params.append('nome_cliente', nomeCliente);
+    if (nomeLoja) params.append('nome_loja', nomeLoja);
+
+    const tbody = document.getElementById('suporte-table-body');
+    const counter = document.getElementById('suporte-table-counter');
+
+    tbody.innerHTML = `
     <tr class="empty-row">
       <td colspan="11">
         <div class="empty-state">
@@ -909,17 +909,17 @@ async function carregarSuporte() {
         </div>
       </td>
     </tr>`;
-  lucide.createIcons();
+    lucide.createIcons();
 
-  try {
-    const rows = await api('GET', `/api/suporte?${params.toString()}`);
+    try {
+      const rows = await api('GET', `/api/suporte?${params.toString()}`);
 
-    // Atualiza contadores
-    document.getElementById('suporte-count').textContent = rows.length;
-    counter.innerHTML = `<span>${rows.length}</span> cliente${rows.length !== 1 ? 's' : ''} no suporte`;
+      // Atualiza contadores
+      document.getElementById('suporte-count').textContent = rows.length;
+      counter.innerHTML = `<span>${rows.length}</span> cliente${rows.length !== 1 ? 's' : ''} no suporte`;
 
-    if (rows.length === 0) {
-      tbody.innerHTML = `
+      if (rows.length === 0) {
+        tbody.innerHTML = `
         <tr class="empty-row">
           <td colspan="7">
             <div class="empty-state">
@@ -929,17 +929,17 @@ async function carregarSuporte() {
             </div>
           </td>
         </tr>`;
-      lucide.createIcons();
-      return;
-    }
+        lucide.createIcons();
+        return;
+      }
 
-    tbody.innerHTML = '';
-    rows.forEach(r => {
-      const dias = diasDesde(r.data_inauguracao_real);
-      const tr = document.createElement('tr');
-      const obs = r.observacao || '';
-      const obsShort = obs.length > 55 ? obs.slice(0, 55) + '…' : obs;
-      tr.innerHTML = `
+      tbody.innerHTML = '';
+      rows.forEach(r => {
+        const dias = diasDesde(r.data_inauguracao_real);
+        const tr = document.createElement('tr');
+        const obs = r.observacao || '';
+        const obsShort = obs.length > 55 ? obs.slice(0, 55) + '…' : obs;
+        tr.innerHTML = `
         <td data-label="Tipo">${badgeTipo(r.tipo)}</td>
         <td data-label="Cliente"><strong>${escHtml(clienteDisplay(r))}</strong></td>
         <td data-label="Loja">${escHtml(r.nome_loja || '—')}</td>
@@ -963,12 +963,12 @@ async function carregarSuporte() {
           </div>
         </td>
       `;
-      tbody.appendChild(tr);
-    });
+        tbody.appendChild(tr);
+      });
 
-    lucide.createIcons();
-  } catch (e) {
-    tbody.innerHTML = `
+      lucide.createIcons();
+    } catch (e) {
+      tbody.innerHTML = `
       <tr class="empty-row">
         <td colspan="7">
           <div class="empty-state">
@@ -977,131 +977,131 @@ async function carregarSuporte() {
           </div>
         </td>
       </tr>`;
-    lucide.createIcons();
+      lucide.createIcons();
+    }
   }
-}
 
-function renderDiasBadge(dias) {
-  if (dias === null) return '—';
-  let cls = 'dias-badge-ok';
-  if (dias > 30) cls = 'dias-badge-warn';
-  if (dias > 60) cls = 'dias-badge-alert';
-  return `<span class="dias-badge ${cls}">${dias} dias</span>`;
-}
+  function renderDiasBadge(dias) {
+    if (dias === null) return '—';
+    let cls = 'dias-badge-ok';
+    if (dias > 30) cls = 'dias-badge-warn';
+    if (dias > 60) cls = 'dias-badge-alert';
+    return `<span class="dias-badge ${cls}">${dias} dias</span>`;
+  }
 
-function renderServidorBadge(servidor) {
-  if (!servidor) return '<span style="opacity:.35">—</span>';
-  const isNuvem = servidor === 'Nuvem';
-  return `<span class="servidor-badge ${isNuvem ? 'servidor-nuvem' : 'servidor-local'}">
+  function renderServidorBadge(servidor) {
+    if (!servidor) return '<span style="opacity:.35">—</span>';
+    const isNuvem = servidor === 'Nuvem';
+    return `<span class="servidor-badge ${isNuvem ? 'servidor-nuvem' : 'servidor-local'}">
     ${isNuvem ? '☁️' : '🖥️'} ${escHtml(servidor)}
   </span>`;
-}
-
-// ─── HELPER MODAL ─────────────────────────────────────────────────
-function abrirModal(id) {
-  fecharPortalDropdown();
-  const el = document.getElementById(id);
-  el.classList.add('open');
-  document.body.style.overflow = 'hidden';
-  lucide.createIcons();
-  setTimeout(() => {
-    const first = el.querySelector('input, select, textarea, button:not(.modal-close)');
-    if (first) first.focus();
-  }, 250);
-}
-
-function fecharModal(id) {
-  document.getElementById(id).classList.remove('open');
-  document.body.style.overflow = '';
-}
-
-// Fechar modal ao clicar no overlay
-document.addEventListener('click', (e) => {
-  if (e.target.id === 'modal-inauguracao' && e.target.classList.contains('open')) {
-    // Modal de inauguração NÃO fecha ao clicar no overlay (comportamento intencional)
-    return;
   }
-  if (e.target.classList.contains('modal-overlay') && e.target.classList.contains('open')) {
-    e.target.classList.remove('open');
-    document.body.style.overflow = '';
-  }
-});
 
-// ESC fecha modal e dropdown (exceto modal de inauguração)
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') {
-    // Fecha todos exceto modal de inauguração (que exige ação explícita)
-    document.querySelectorAll('.modal-overlay.open').forEach(m => {
-      if (m.id !== 'modal-inauguracao') {
-        m.classList.remove('open');
-      }
-    });
-    document.body.style.overflow = '';
+  // ─── HELPER MODAL ─────────────────────────────────────────────────
+  function abrirModal(id) {
     fecharPortalDropdown();
+    const el = document.getElementById(id);
+    el.classList.add('open');
+    document.body.style.overflow = 'hidden';
+    lucide.createIcons();
+    setTimeout(() => {
+      const first = el.querySelector('input, select, textarea, button:not(.modal-close)');
+      if (first) first.focus();
+    }, 250);
   }
-});
 
-// ─── TOAST ────────────────────────────────────────────────────────
-function showToast(msg, type = 'info') {
-  const container = document.getElementById('toast-container');
-  const icons     = { success: 'check-circle-2', error: 'x-circle', info: 'info' };
-  const icon      = icons[type] || 'info';
+  function fecharModal(id) {
+    document.getElementById(id).classList.remove('open');
+    document.body.style.overflow = '';
+  }
 
-  const el = document.createElement('div');
-  el.className = `toast toast-${type}`;
-  el.innerHTML = `<i data-lucide="${icon}"></i><span>${escHtml(msg)}</span>`;
-  container.appendChild(el);
-  lucide.createIcons();
-
-  setTimeout(() => {
-    el.classList.add('toast-out');
-    setTimeout(() => el.remove(), 280);
-  }, 3500);
-}
-
-// ─── RESPONSÁVEIS TÉCNICOS ───────────────────────────────────────
-function popularSelectResponsaveis(valorAtual) {
-  const sel = document.getElementById('responsavel-tecnico');
-  sel.innerHTML = '<option value="">Selecione o responsável...</option>';
-  listaResponsaveis.forEach(r => {
-    const opt = document.createElement('option');
-    opt.value = r.nome;
-    opt.textContent = r.nome;
-    sel.appendChild(opt);
-  });
-  if (valorAtual) {
-    // Se o valor atual não estiver na lista (legado), adiciona como opção
-    const existe = listaResponsaveis.some(r => r.nome === valorAtual);
-    if (!existe) {
-      const opt = document.createElement('option');
-      opt.value = valorAtual;
-      opt.textContent = `${valorAtual} (não cadastrado)`;
-      sel.appendChild(opt);
+  // Fechar modal ao clicar no overlay
+  document.addEventListener('click', (e) => {
+    if (e.target.id === 'modal-inauguracao' && e.target.classList.contains('open')) {
+      // Modal de inauguração NÃO fecha ao clicar no overlay (comportamento intencional)
+      return;
     }
-    sel.value = valorAtual;
+    if (e.target.classList.contains('modal-overlay') && e.target.classList.contains('open')) {
+      e.target.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+  });
+
+  // ESC fecha modal e dropdown (exceto modal de inauguração)
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      // Fecha todos exceto modal de inauguração (que exige ação explícita)
+      document.querySelectorAll('.modal-overlay.open').forEach(m => {
+        if (m.id !== 'modal-inauguracao') {
+          m.classList.remove('open');
+        }
+      });
+      document.body.style.overflow = '';
+      fecharPortalDropdown();
+    }
+  });
+
+  // ─── TOAST ────────────────────────────────────────────────────────
+  function showToast(msg, type = 'info') {
+    const container = document.getElementById('toast-container');
+    const icons = { success: 'check-circle-2', error: 'x-circle', info: 'info' };
+    const icon = icons[type] || 'info';
+
+    const el = document.createElement('div');
+    el.className = `toast toast-${type}`;
+    el.innerHTML = `<i data-lucide="${icon}"></i><span>${escHtml(msg)}</span>`;
+    container.appendChild(el);
+    lucide.createIcons();
+
+    setTimeout(() => {
+      el.classList.add('toast-out');
+      setTimeout(() => el.remove(), 280);
+    }, 3500);
   }
-}
 
-async function carregarResponsaveis() {
-  try {
-    listaResponsaveis = await api('GET', '/api/responsaveis');
-    renderizarTabelaResponsaveis();
-  } catch (e) {
-    // silencioso na primeira carga
-    console.error('Erro ao carregar responsáveis:', e);
+  // ─── RESPONSÁVEIS TÉCNICOS ───────────────────────────────────────
+  function popularSelectResponsaveis(valorAtual) {
+    const sel = document.getElementById('responsavel-tecnico');
+    sel.innerHTML = '<option value="">Selecione o responsável...</option>';
+    listaResponsaveis.forEach(r => {
+      const opt = document.createElement('option');
+      opt.value = r.nome;
+      opt.textContent = r.nome;
+      sel.appendChild(opt);
+    });
+    if (valorAtual) {
+      // Se o valor atual não estiver na lista (legado), adiciona como opção
+      const existe = listaResponsaveis.some(r => r.nome === valorAtual);
+      if (!existe) {
+        const opt = document.createElement('option');
+        opt.value = valorAtual;
+        opt.textContent = `${valorAtual} (não cadastrado)`;
+        sel.appendChild(opt);
+      }
+      sel.value = valorAtual;
+    }
   }
-}
 
-function renderizarTabelaResponsaveis() {
-  const tbody   = document.getElementById('resp-table-body');
-  const counter = document.getElementById('resp-table-counter');
-  if (!tbody || !counter) return;
+  async function carregarResponsaveis() {
+    try {
+      listaResponsaveis = await api('GET', '/api/responsaveis');
+      renderizarTabelaResponsaveis();
+    } catch (e) {
+      // silencioso na primeira carga
+      console.error('Erro ao carregar responsáveis:', e);
+    }
+  }
 
-  const n = listaResponsaveis.length;
-  counter.innerHTML = `<span>${n}</span> responsáve${n !== 1 ? 'is' : 'l'} cadastrado${n !== 1 ? 's' : ''}`;
+  function renderizarTabelaResponsaveis() {
+    const tbody = document.getElementById('resp-table-body');
+    const counter = document.getElementById('resp-table-counter');
+    if (!tbody || !counter) return;
 
-  if (n === 0) {
-    tbody.innerHTML = `
+    const n = listaResponsaveis.length;
+    counter.innerHTML = `<span>${n}</span> responsáve${n !== 1 ? 'is' : 'l'} cadastrado${n !== 1 ? 's' : ''}`;
+
+    if (n === 0) {
+      tbody.innerHTML = `
       <tr class="empty-row">
         <td colspan="3">
           <div class="empty-state">
@@ -1111,15 +1111,15 @@ function renderizarTabelaResponsaveis() {
           </div>
         </td>
       </tr>`;
-    lucide.createIcons();
-    return;
-  }
+      lucide.createIcons();
+      return;
+    }
 
-  tbody.innerHTML = '';
-  listaResponsaveis.forEach(r => {
-    const tr = document.createElement('tr');
-    const dt = r.created_at ? new Date(r.created_at).toLocaleDateString('pt-BR') : '—';
-    tr.innerHTML = `
+    tbody.innerHTML = '';
+    listaResponsaveis.forEach(r => {
+      const tr = document.createElement('tr');
+      const dt = r.created_at ? new Date(r.created_at).toLocaleDateString('pt-BR') : '—';
+      tr.innerHTML = `
       <td data-label="Nome"><strong>${escHtml(r.nome)}</strong></td>
       <td data-label="Cadastrado em" style="opacity:.7">${dt}</td>
       <td data-label="Ações">
@@ -1133,537 +1133,537 @@ function renderizarTabelaResponsaveis() {
         </div>
       </td>
     `;
-    tbody.appendChild(tr);
-  });
-  lucide.createIcons();
-}
-
-function abrirModalResponsavel() {
-  editingRespId = null;
-  document.getElementById('modal-resp-title').textContent = 'Novo Responsável';
-  document.getElementById('form-responsavel').reset();
-  document.getElementById('resp-edit-id').value = '';
-  abrirModal('modal-responsavel');
-}
-
-function abrirModalEditarResp(id) {
-  const r = listaResponsaveis.find(x => x.id === id);
-  if (!r) return;
-  editingRespId = id;
-  document.getElementById('modal-resp-title').textContent = 'Editar Responsável';
-  document.getElementById('resp-edit-id').value = id;
-  document.getElementById('resp-nome').value = r.nome;
-  abrirModal('modal-responsavel');
-}
-
-function fecharModalResponsavel() {
-  editingRespId = null;
-  fecharModal('modal-responsavel');
-}
-
-async function salvarResponsavel() {
-  const nome = document.getElementById('resp-nome').value.trim();
-  if (!nome) {
-    document.getElementById('resp-nome').classList.add('error');
-    showToast('Preencha o nome do responsável.', 'error');
-    return;
+      tbody.appendChild(tr);
+    });
+    lucide.createIcons();
   }
-  document.getElementById('resp-nome').classList.remove('error');
 
-  const btn = document.getElementById('btn-salvar-resp');
-  btn.disabled = true;
-  btn.innerHTML = '<i data-lucide="loader-2" class="spinning"></i> Salvando...';
-  lucide.createIcons();
+  function abrirModalResponsavel() {
+    editingRespId = null;
+    document.getElementById('modal-resp-title').textContent = 'Novo Responsável';
+    document.getElementById('form-responsavel').reset();
+    document.getElementById('resp-edit-id').value = '';
+    abrirModal('modal-responsavel');
+  }
 
-  try {
-    if (editingRespId) {
-      await api('PUT', `/api/responsaveis/${editingRespId}`, { nome });
-      showToast('Responsável atualizado com sucesso!', 'success');
-    } else {
-      await api('POST', '/api/responsaveis', { nome });
-      showToast('Responsável cadastrado com sucesso!', 'success');
+  function abrirModalEditarResp(id) {
+    const r = listaResponsaveis.find(x => x.id === id);
+    if (!r) return;
+    editingRespId = id;
+    document.getElementById('modal-resp-title').textContent = 'Editar Responsável';
+    document.getElementById('resp-edit-id').value = id;
+    document.getElementById('resp-nome').value = r.nome;
+    abrirModal('modal-responsavel');
+  }
+
+  function fecharModalResponsavel() {
+    editingRespId = null;
+    fecharModal('modal-responsavel');
+  }
+
+  async function salvarResponsavel() {
+    const nome = document.getElementById('resp-nome').value.trim();
+    if (!nome) {
+      document.getElementById('resp-nome').classList.add('error');
+      showToast('Preencha o nome do responsável.', 'error');
+      return;
     }
-    await carregarResponsaveis();
-    fecharModalResponsavel();
-  } catch (e) {
-    showToast('Erro: ' + e.message, 'error');
-  } finally {
-    btn.disabled = false;
-    btn.innerHTML = '<i data-lucide="save"></i> Salvar';
+    document.getElementById('resp-nome').classList.remove('error');
+
+    const btn = document.getElementById('btn-salvar-resp');
+    btn.disabled = true;
+    btn.innerHTML = '<i data-lucide="loader-2" class="spinning"></i> Salvando...';
+    lucide.createIcons();
+
+    try {
+      if (editingRespId) {
+        await api('PUT', `/api/responsaveis/${editingRespId}`, { nome });
+        showToast('Responsável atualizado com sucesso!', 'success');
+      } else {
+        await api('POST', '/api/responsaveis', { nome });
+        showToast('Responsável cadastrado com sucesso!', 'success');
+      }
+      await carregarResponsaveis();
+      fecharModalResponsavel();
+    } catch (e) {
+      showToast('Erro: ' + e.message, 'error');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '<i data-lucide="save"></i> Salvar';
+      lucide.createIcons();
+    }
+  }
+
+  function abrirModalExcluirResp(id) {
+    deletingRespId = id;
+    const r = listaResponsaveis.find(x => x.id === id);
+    document.getElementById('delete-resp-name').textContent = r ? r.nome : '';
+    abrirModal('modal-excluir-resp');
+  }
+
+  function fecharModalExcluirResp() {
+    deletingRespId = null;
+    fecharModal('modal-excluir-resp');
+  }
+
+  async function confirmarExclusaoResp() {
+    if (!deletingRespId) return;
+
+    const btn = document.getElementById('btn-confirmar-excluir-resp');
+    btn.disabled = true;
+    btn.innerHTML = '<i data-lucide="loader-2" class="spinning"></i> Excluindo...';
+    lucide.createIcons();
+
+    try {
+      await api('DELETE', `/api/responsaveis/${deletingRespId}`);
+      await carregarResponsaveis();
+      fecharModalExcluirResp();
+      showToast('Responsável excluído com sucesso.', 'info');
+    } catch (e) {
+      showToast('Erro ao excluir: ' + e.message, 'error');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '<i data-lucide="trash-2"></i> Excluir';
+      lucide.createIcons();
+    }
+  }
+
+  // ─── EXPORTAÇÃO DE RELATÓRIOS ───────────────────────────────────
+  function toggleExportMenu(menuId) {
+    const menu = document.getElementById(menuId);
+    // Fecha outros menus abertos
+    document.querySelectorAll('.export-menu.open').forEach(m => {
+      if (m.id !== menuId) m.classList.remove('open');
+    });
+    menu.classList.toggle('open');
     lucide.createIcons();
   }
-}
 
-function abrirModalExcluirResp(id) {
-  deletingRespId = id;
-  const r = listaResponsaveis.find(x => x.id === id);
-  document.getElementById('delete-resp-name').textContent = r ? r.nome : '';
-  abrirModal('modal-excluir-resp');
-}
-
-function fecharModalExcluirResp() {
-  deletingRespId = null;
-  fecharModal('modal-excluir-resp');
-}
-
-async function confirmarExclusaoResp() {
-  if (!deletingRespId) return;
-
-  const btn = document.getElementById('btn-confirmar-excluir-resp');
-  btn.disabled = true;
-  btn.innerHTML = '<i data-lucide="loader-2" class="spinning"></i> Excluindo...';
-  lucide.createIcons();
-
-  try {
-    await api('DELETE', `/api/responsaveis/${deletingRespId}`);
-    await carregarResponsaveis();
-    fecharModalExcluirResp();
-    showToast('Responsável excluído com sucesso.', 'info');
-  } catch (e) {
-    showToast('Erro ao excluir: ' + e.message, 'error');
-  } finally {
-    btn.disabled = false;
-    btn.innerHTML = '<i data-lucide="trash-2"></i> Excluir';
-    lucide.createIcons();
+  function fecharExportMenus() {
+    document.querySelectorAll('.export-menu.open').forEach(m => m.classList.remove('open'));
   }
-}
 
-// ─── EXPORTAÇÃO DE RELATÓRIOS ───────────────────────────────────
-function toggleExportMenu(menuId) {
-  const menu = document.getElementById(menuId);
-  // Fecha outros menus abertos
-  document.querySelectorAll('.export-menu.open').forEach(m => {
-    if (m.id !== menuId) m.classList.remove('open');
-  });
-  menu.classList.toggle('open');
-  lucide.createIcons();
-}
+  // ---- Helpers de exportação ----
+  function tipoLabel(tipo) {
+    const map = { escalada: 'Escalada', cliente_novo: 'Cliente Novo', troca_titularidade: 'Troca de Titularidade' };
+    return map[tipo] || tipo;
+  }
 
-function fecharExportMenus() {
-  document.querySelectorAll('.export-menu.open').forEach(m => m.classList.remove('open'));
-}
+  function statusLabel(status) {
+    const map = { parado: 'Parado', em_andamento: 'Em Andamento', inaugurado: 'Inaugurado' };
+    return map[status] || status;
+  }
 
-// ---- Helpers de exportação ----
-function tipoLabel(tipo) {
-  const map = { escalada: 'Escalada', cliente_novo: 'Cliente Novo', troca_titularidade: 'Troca de Titularidade' };
-  return map[tipo] || tipo;
-}
+  function gerarTimestamp() {
+    const d = new Date();
+    return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}_${String(d.getHours()).padStart(2, '0')}${String(d.getMinutes()).padStart(2, '0')}`;
+  }
 
-function statusLabel(status) {
-  const map = { parado: 'Parado', em_andamento: 'Em Andamento', inaugurado: 'Inaugurado' };
-  return map[status] || status;
-}
+  function downloadBlob(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 100);
+  }
 
-function gerarTimestamp() {
-  const d = new Date();
-  return `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}_${String(d.getHours()).padStart(2,'0')}${String(d.getMinutes()).padStart(2,'0')}`;
-}
+  // ─── SELEÇÃO DE CAMPOS PARA EXPORTAÇÃO ──────────────────────────
+  let exportPendente = { formato: null, origem: null }; // 'implantacoes' | 'suporte'
 
-function downloadBlob(blob, filename) {
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 100);
-}
+  // Definição dos campos disponíveis para cada origem
+  const camposImplantacoes = [
+    { key: 'Tipo', label: 'Tipo de Implantação', icon: '📋' },
+    { key: 'Cliente', label: 'Nome do Cliente', icon: '👤' },
+    { key: 'Loja', label: 'Nome da Loja', icon: '🏪' },
+    { key: 'Data Inauguração', label: 'Data de Inauguração', icon: '📅' },
+    { key: 'Responsável Técnico', label: 'Responsável Técnico', icon: '👷' },
+    { key: 'Status', label: 'Status', icon: '🔘' },
+    { key: 'Telefone', label: 'Telefone', icon: '📞' },
+    { key: 'Observação', label: 'Observação', icon: '📝' },
+  ];
 
-// ─── SELEÇÃO DE CAMPOS PARA EXPORTAÇÃO ──────────────────────────
-let exportPendente = { formato: null, origem: null }; // 'implantacoes' | 'suporte'
+  const camposSuporte = [
+    { key: 'Tipo', label: 'Tipo de Implantação', icon: '📋' },
+    { key: 'Cliente', label: 'Nome do Cliente', icon: '👤' },
+    { key: 'Loja', label: 'Nome da Loja', icon: '🏪' },
+    { key: 'Data Inauguração', label: 'Data de Inauguração', icon: '📅' },
+    { key: 'Dias no Suporte', label: 'Dias no Suporte', icon: '⏱️' },
+    { key: 'Servidor', label: 'Servidor', icon: '🖥️' },
+    { key: 'Login Loja Express', label: 'Login Loja Express', icon: '🔑' },
+    { key: 'Senha Loja Express', label: 'Senha Loja Express', icon: '🔒' },
+    { key: 'Responsável', label: 'Responsável Técnico', icon: '👷' },
+    { key: 'Telefone', label: 'Telefone', icon: '📞' },
+    { key: 'Observação', label: 'Observação', icon: '📝' },
+  ];
 
-// Definição dos campos disponíveis para cada origem
-const camposImplantacoes = [
-  { key: 'Tipo',                label: 'Tipo de Implantação',  icon: '📋' },
-  { key: 'Cliente',             label: 'Nome do Cliente',      icon: '👤' },
-  { key: 'Loja',                label: 'Nome da Loja',         icon: '🏪' },
-  { key: 'Data Inauguração',    label: 'Data de Inauguração',  icon: '📅' },
-  { key: 'Responsável Técnico', label: 'Responsável Técnico',  icon: '👷' },
-  { key: 'Status',              label: 'Status',               icon: '🔘' },
-  { key: 'Telefone',            label: 'Telefone',             icon: '📞' },
-  { key: 'Observação',          label: 'Observação',           icon: '📝' },
-];
+  function abrirModalExportCampos(formato, origem) {
+    fecharExportMenus();
+    exportPendente = { formato, origem };
 
-const camposSuporte = [
-  { key: 'Tipo',                label: 'Tipo de Implantação',  icon: '📋' },
-  { key: 'Cliente',             label: 'Nome do Cliente',      icon: '👤' },
-  { key: 'Loja',                label: 'Nome da Loja',         icon: '🏪' },
-  { key: 'Data Inauguração',    label: 'Data de Inauguração',  icon: '📅' },
-  { key: 'Dias no Suporte',     label: 'Dias no Suporte',      icon: '⏱️' },
-  { key: 'Servidor',            label: 'Servidor',             icon: '🖥️' },
-  { key: 'Login Loja Express',  label: 'Login Loja Express',   icon: '🔑' },
-  { key: 'Senha Loja Express',  label: 'Senha Loja Express',   icon: '🔒' },
-  { key: 'Responsável',         label: 'Responsável Técnico',  icon: '👷' },
-  { key: 'Telefone',            label: 'Telefone',             icon: '📞' },
-  { key: 'Observação',          label: 'Observação',           icon: '📝' },
-];
+    // Atualiza label do formato
+    const formatoLabels = { excel: '📊 Excel (.xlsx)', txt: '📄 Texto (.txt)', pdf: '📑 PDF (.pdf)' };
+    document.getElementById('export-modal-formato-label').textContent = `Formato: ${formatoLabels[formato] || formato}`;
 
-function abrirModalExportCampos(formato, origem) {
-  fecharExportMenus();
-  exportPendente = { formato, origem };
+    // Preenche o grid de campos
+    const campos = origem === 'suporte' ? camposSuporte : camposImplantacoes;
+    const grid = document.getElementById('export-campos-grid');
+    grid.innerHTML = '';
 
-  // Atualiza label do formato
-  const formatoLabels = { excel: '📊 Excel (.xlsx)', txt: '📄 Texto (.txt)', pdf: '📑 PDF (.pdf)' };
-  document.getElementById('export-modal-formato-label').textContent = `Formato: ${formatoLabels[formato] || formato}`;
-
-  // Preenche o grid de campos
-  const campos = origem === 'suporte' ? camposSuporte : camposImplantacoes;
-  const grid = document.getElementById('export-campos-grid');
-  grid.innerHTML = '';
-
-  campos.forEach((campo, i) => {
-    const div = document.createElement('label');
-    div.className = 'export-campo-item';
-    div.innerHTML = `
+    campos.forEach((campo, i) => {
+      const div = document.createElement('label');
+      div.className = 'export-campo-item';
+      div.innerHTML = `
       <input type="checkbox" class="export-campo-check" data-key="${campo.key}" checked onchange="atualizarContadorCampos()" />
       <div class="export-campo-info">
         <span class="export-campo-icon">${campo.icon}</span>
         <span class="export-campo-label">${campo.label}</span>
       </div>
     `;
-    grid.appendChild(div);
-  });
-
-  // Marca "Relatório completo"
-  document.getElementById('export-completo-check').checked = true;
-  atualizarContadorCampos();
-
-  abrirModal('modal-export-campos');
-}
-
-function fecharModalExportCampos() {
-  fecharModal('modal-export-campos');
-  exportPendente = { formato: null, origem: null };
-}
-
-function toggleRelatorioCompleto(checked) {
-  document.querySelectorAll('.export-campo-check').forEach(cb => {
-    cb.checked = checked;
-    // Atualiza visual do item pai
-    cb.closest('.export-campo-item').classList.toggle('unchecked', !checked);
-  });
-  atualizarContadorCampos();
-}
-
-function atualizarContadorCampos() {
-  const checkboxes = document.querySelectorAll('.export-campo-check');
-  const total = checkboxes.length;
-  const selecionados = [...checkboxes].filter(cb => cb.checked).length;
-
-  // Atualiza o label do "Relatório completo" sem disparar onchange
-  const compleCheck = document.getElementById('export-completo-check');
-  compleCheck.checked = selecionados === total;
-
-  // Atualiza visual dos itens
-  checkboxes.forEach(cb => {
-    cb.closest('.export-campo-item').classList.toggle('unchecked', !cb.checked);
-  });
-
-  // Atualiza o toggle visual
-  const toggle = document.getElementById('export-toggle-completo');
-  toggle.classList.toggle('partial', selecionados > 0 && selecionados < total);
-
-  // Atualiza contador
-  const counter = document.getElementById('export-campos-counter');
-  counter.innerHTML = `<span>${selecionados}</span> de ${total} campos selecionados`;
-
-  // Desabilita botão se nenhum campo selecionado
-  document.getElementById('btn-confirmar-export').disabled = selecionados === 0;
-}
-
-function getCamposSelecionados() {
-  return [...document.querySelectorAll('.export-campo-check:checked')].map(cb => cb.dataset.key);
-}
-
-function confirmarExportacao() {
-  const { formato, origem } = exportPendente;
-  const camposSel = getCamposSelecionados();
-
-  if (camposSel.length === 0) {
-    showToast('Selecione pelo menos um campo para exportar.', 'error');
-    return;
-  }
-
-  fecharModalExportCampos();
-
-  if (origem === 'suporte') {
-    executarExportSuporte(formato, camposSel);
-  } else {
-    executarExportImplantacoes(formato, camposSel);
-  }
-}
-
-// ---- Implantações ----
-function dadosImplantacoesParaExport(camposSel) {
-  return filteredRecords.map(r => {
-    const full = {
-      'Tipo':                tipoLabel(r.tipo),
-      'Cliente':             clienteDisplay(r),
-      'Loja':                r.nome_loja || '',
-      'Data Inauguração':    formatarData(r.data_inauguracao),
-      'Responsável Técnico': r.responsavel_tecnico || '',
-      'Status':              statusLabel(r.status),
-      'Telefone':            r.telefone || '',
-      'Observação':          r.observacao || '',
-    };
-    // Filtra apenas os campos selecionados
-    const filtered = {};
-    camposSel.forEach(key => {
-      if (key in full) filtered[key] = full[key];
+      grid.appendChild(div);
     });
-    return filtered;
-  });
-}
 
-function exportarImplantacoes(formato) {
-  abrirModalExportCampos(formato, 'implantacoes');
-}
+    // Marca "Relatório completo"
+    document.getElementById('export-completo-check').checked = true;
+    atualizarContadorCampos();
 
-function executarExportImplantacoes(formato, camposSel) {
-  const dados = dadosImplantacoesParaExport(camposSel);
-  if (dados.length === 0) {
-    showToast('Nenhum registro para exportar.', 'error');
-    return;
+    abrirModal('modal-export-campos');
   }
-  const ts = gerarTimestamp();
-  const titulo = 'Relatório de Implantações';
 
-  if (formato === 'excel') exportarExcel(dados, `implantacoes_${ts}`, titulo);
-  else if (formato === 'txt') exportarTxt(dados, `implantacoes_${ts}`, titulo);
-  else if (formato === 'pdf') exportarPdf(dados, `implantacoes_${ts}`, titulo);
-}
+  function fecharModalExportCampos() {
+    fecharModal('modal-export-campos');
+    exportPendente = { formato: null, origem: null };
+  }
 
-// ---- Suporte ----
-function dadosSuporteParaExport(camposSel) {
-  // Pega os dados já renderizados na tabela de suporte
-  const tbody = document.getElementById('suporte-table-body');
-  if (!tbody) return [];
-  const rows = tbody.querySelectorAll('tr:not(.empty-row)');
-  const dados = [];
-  rows.forEach(tr => {
-    const cells = tr.querySelectorAll('td');
-    if (cells.length >= 11) {
+  function toggleRelatorioCompleto(checked) {
+    document.querySelectorAll('.export-campo-check').forEach(cb => {
+      cb.checked = checked;
+      // Atualiza visual do item pai
+      cb.closest('.export-campo-item').classList.toggle('unchecked', !checked);
+    });
+    atualizarContadorCampos();
+  }
+
+  function atualizarContadorCampos() {
+    const checkboxes = document.querySelectorAll('.export-campo-check');
+    const total = checkboxes.length;
+    const selecionados = [...checkboxes].filter(cb => cb.checked).length;
+
+    // Atualiza o label do "Relatório completo" sem disparar onchange
+    const compleCheck = document.getElementById('export-completo-check');
+    compleCheck.checked = selecionados === total;
+
+    // Atualiza visual dos itens
+    checkboxes.forEach(cb => {
+      cb.closest('.export-campo-item').classList.toggle('unchecked', !cb.checked);
+    });
+
+    // Atualiza o toggle visual
+    const toggle = document.getElementById('export-toggle-completo');
+    toggle.classList.toggle('partial', selecionados > 0 && selecionados < total);
+
+    // Atualiza contador
+    const counter = document.getElementById('export-campos-counter');
+    counter.innerHTML = `<span>${selecionados}</span> de ${total} campos selecionados`;
+
+    // Desabilita botão se nenhum campo selecionado
+    document.getElementById('btn-confirmar-export').disabled = selecionados === 0;
+  }
+
+  function getCamposSelecionados() {
+    return [...document.querySelectorAll('.export-campo-check:checked')].map(cb => cb.dataset.key);
+  }
+
+  function confirmarExportacao() {
+    const { formato, origem } = exportPendente;
+    const camposSel = getCamposSelecionados();
+
+    if (camposSel.length === 0) {
+      showToast('Selecione pelo menos um campo para exportar.', 'error');
+      return;
+    }
+
+    fecharModalExportCampos();
+
+    if (origem === 'suporte') {
+      executarExportSuporte(formato, camposSel);
+    } else {
+      executarExportImplantacoes(formato, camposSel);
+    }
+  }
+
+  // ---- Implantações ----
+  function dadosImplantacoesParaExport(camposSel) {
+    return filteredRecords.map(r => {
       const full = {
-        'Tipo':                cells[0].textContent.trim(),
-        'Cliente':             cells[1].textContent.trim(),
-        'Loja':                cells[2].textContent.trim(),
-        'Data Inauguração':    cells[3].textContent.trim(),
-        'Dias no Suporte':     cells[4].textContent.trim(),
-        'Servidor':            cells[5].textContent.trim(),
-        'Login Loja Express':  cells[6].textContent.trim(),
-        'Senha Loja Express':  cells[7].textContent.trim(),
-        'Responsável':         cells[8].textContent.trim(),
-        'Telefone':            cells[9].textContent.trim(),
-        'Observação':          cells[10].textContent.trim(),
+        'Tipo': tipoLabel(r.tipo),
+        'Cliente': clienteDisplay(r),
+        'Loja': r.nome_loja || '',
+        'Data Inauguração': formatarData(r.data_inauguracao),
+        'Responsável Técnico': r.responsavel_tecnico || '',
+        'Status': statusLabel(r.status),
+        'Telefone': r.telefone || '',
+        'Observação': r.observacao || '',
       };
       // Filtra apenas os campos selecionados
       const filtered = {};
       camposSel.forEach(key => {
         if (key in full) filtered[key] = full[key];
       });
-      dados.push(filtered);
+      return filtered;
+    });
+  }
+
+  function exportarImplantacoes(formato) {
+    abrirModalExportCampos(formato, 'implantacoes');
+  }
+
+  function executarExportImplantacoes(formato, camposSel) {
+    const dados = dadosImplantacoesParaExport(camposSel);
+    if (dados.length === 0) {
+      showToast('Nenhum registro para exportar.', 'error');
+      return;
     }
-  });
-  return dados;
-}
+    const ts = gerarTimestamp();
+    const titulo = 'Relatório de Implantações';
 
-function exportarSuporte(formato) {
-  abrirModalExportCampos(formato, 'suporte');
-}
-
-function executarExportSuporte(formato, camposSel) {
-  const dados = dadosSuporteParaExport(camposSel);
-  if (dados.length === 0) {
-    showToast('Nenhum registro para exportar.', 'error');
-    return;
+    if (formato === 'excel') exportarExcel(dados, `implantacoes_${ts}`, titulo);
+    else if (formato === 'txt') exportarTxt(dados, `implantacoes_${ts}`, titulo);
+    else if (formato === 'pdf') exportarPdf(dados, `implantacoes_${ts}`, titulo);
   }
-  const ts = gerarTimestamp();
-  const titulo = 'Relatório de Clientes no Suporte';
 
-  if (formato === 'excel') exportarExcel(dados, `suporte_${ts}`, titulo);
-  else if (formato === 'txt') exportarTxt(dados, `suporte_${ts}`, titulo);
-  else if (formato === 'pdf') exportarPdf(dados, `suporte_${ts}`, titulo);
-}
-
-// ---- EXCEL ----
-function exportarExcel(dados, nomeArquivo, tituloSheet) {
-  try {
-    const ws = XLSX.utils.json_to_sheet(dados);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, tituloSheet.substring(0, 31));
-
-    // Auto-ajuste de largura das colunas
-    const cols = Object.keys(dados[0]).map(key => {
-      const maxLen = Math.max(
-        key.length,
-        ...dados.map(row => String(row[key] || '').length)
-      );
-      return { wch: Math.min(maxLen + 2, 40) };
-    });
-    ws['!cols'] = cols;
-
-    XLSX.writeFile(wb, `${nomeArquivo}.xlsx`);
-    showToast('📄 Excel exportado com sucesso!', 'success');
-  } catch (e) {
-    showToast('Erro ao exportar Excel: ' + e.message, 'error');
-  }
-}
-
-// ---- TXT ----
-function exportarTxt(dados, nomeArquivo, titulo) {
-  try {
-    const colunas = Object.keys(dados[0]);
-    // Calcula largura de cada coluna
-    const larguras = colunas.map(col =>
-      Math.max(col.length, ...dados.map(r => String(r[col] || '').length)) + 2
-    );
-
-    let txt = `${titulo}\n`;
-    txt += `Gerado em: ${new Date().toLocaleString('pt-BR')}\n`;
-    txt += `Total de registros: ${dados.length}\n`;
-    txt += '='.repeat(larguras.reduce((a, b) => a + b, 0)) + '\n\n';
-
-    // Cabeçalho
-    txt += colunas.map((col, i) => col.padEnd(larguras[i])).join('') + '\n';
-    txt += colunas.map((_, i) => '-'.repeat(larguras[i])).join('') + '\n';
-
-    // Dados
-    dados.forEach(row => {
-      txt += colunas.map((col, i) => String(row[col] || '—').padEnd(larguras[i])).join('') + '\n';
-    });
-
-    const blob = new Blob([txt], { type: 'text/plain;charset=utf-8' });
-    downloadBlob(blob, `${nomeArquivo}.txt`);
-    showToast('📄 TXT exportado com sucesso!', 'success');
-  } catch (e) {
-    showToast('Erro ao exportar TXT: ' + e.message, 'error');
-  }
-}
-
-// ---- PDF ----
-function exportarPdf(dados, nomeArquivo, titulo) {
-  try {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-
-    // Título
-    doc.setFontSize(16);
-    doc.setTextColor(40, 40, 40);
-    doc.text(titulo, 14, 18);
-
-    // Subtítulo
-    doc.setFontSize(9);
-    doc.setTextColor(130, 130, 130);
-    doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}  |  Total: ${dados.length} registros`, 14, 25);
-
-    // Tabela
-    const colunas = Object.keys(dados[0]);
-    const linhas = dados.map(row => colunas.map(col => String(row[col] || '—')));
-
-    doc.autoTable({
-      head: [colunas],
-      body: linhas,
-      startY: 30,
-      theme: 'grid',
-      styles: {
-        fontSize: 8,
-        cellPadding: 3,
-        lineColor: [200, 200, 200],
-        lineWidth: 0.2,
-      },
-      headStyles: {
-        fillColor: [249, 115, 22],
-        textColor: [255, 255, 255],
-        fontStyle: 'bold',
-        fontSize: 8.5,
-      },
-      alternateRowStyles: {
-        fillColor: [248, 248, 248],
-      },
-      margin: { top: 30, left: 14, right: 14 },
-      didDrawPage: (data) => {
-        // Rodapé
-        doc.setFontSize(8);
-        doc.setTextColor(160, 160, 160);
-        const pageNum = doc.internal.getNumberOfPages();
-        doc.text(
-          `Página ${data.pageNumber} de ${pageNum}  —  Controle de Implantação`,
-          doc.internal.pageSize.width / 2, doc.internal.pageSize.height - 8,
-          { align: 'center' }
-        );
+  // ---- Suporte ----
+  function dadosSuporteParaExport(camposSel) {
+    // Pega os dados já renderizados na tabela de suporte
+    const tbody = document.getElementById('suporte-table-body');
+    if (!tbody) return [];
+    const rows = tbody.querySelectorAll('tr:not(.empty-row)');
+    const dados = [];
+    rows.forEach(tr => {
+      const cells = tr.querySelectorAll('td');
+      if (cells.length >= 11) {
+        const full = {
+          'Tipo': cells[0].textContent.trim(),
+          'Cliente': cells[1].textContent.trim(),
+          'Loja': cells[2].textContent.trim(),
+          'Data Inauguração': cells[3].textContent.trim(),
+          'Dias no Suporte': cells[4].textContent.trim(),
+          'Servidor': cells[5].textContent.trim(),
+          'Login Loja Express': cells[6].textContent.trim(),
+          'Senha Loja Express': cells[7].textContent.trim(),
+          'Responsável': cells[8].textContent.trim(),
+          'Telefone': cells[9].textContent.trim(),
+          'Observação': cells[10].textContent.trim(),
+        };
+        // Filtra apenas os campos selecionados
+        const filtered = {};
+        camposSel.forEach(key => {
+          if (key in full) filtered[key] = full[key];
+        });
+        dados.push(filtered);
       }
     });
-
-    doc.save(`${nomeArquivo}.pdf`);
-    showToast('📄 PDF exportado com sucesso!', 'success');
-  } catch (e) {
-    showToast('Erro ao exportar PDF: ' + e.message, 'error');
+    return dados;
   }
-}
 
-// ─── TREINAMENTOS ────────────────────────────────────────────────
-let treinamentosAtuais = [];
-
-async function abrirModalTreinamentos(id) {
-  document.getElementById('treinamento-implantacao-id').value = id;
-  const container = document.getElementById('treinamentos-container');
-  container.innerHTML = '<div style="text-align:center; padding:20px;"><i data-lucide="loader-2" class="spinning"></i> Carregando...</div>';
-  document.getElementById('qtde-treinamentos').value = '';
-  
-  abrirModal('modal-treinamentos');
-
-  try {
-    const treinamentos = await api('GET', `/api/implantacoes/${id}/treinamentos`);
-    treinamentosAtuais = treinamentos || [];
-    document.getElementById('qtde-treinamentos').value = treinamentosAtuais.length;
-    renderizarCamposTreinamentos();
-  } catch (e) {
-    container.innerHTML = `<div class="error" style="color:red; text-align:center;">Erro ao carregar: ${e.message}</div>`;
+  function exportarSuporte(formato) {
+    abrirModalExportCampos(formato, 'suporte');
   }
-}
 
-function fecharModalTreinamentos() {
-  fecharModal('modal-treinamentos');
-}
+  function executarExportSuporte(formato, camposSel) {
+    const dados = dadosSuporteParaExport(camposSel);
+    if (dados.length === 0) {
+      showToast('Nenhum registro para exportar.', 'error');
+      return;
+    }
+    const ts = gerarTimestamp();
+    const titulo = 'Relatório de Clientes no Suporte';
 
-function gerarCamposTreinamentos() {
-  const qtde = parseInt(document.getElementById('qtde-treinamentos').value) || 0;
-  // Mantém os existentes até o limite da quantidade, adiciona vazios se necessário
-  if (qtde < treinamentosAtuais.length) {
-    treinamentosAtuais = treinamentosAtuais.slice(0, qtde);
-  } else {
-    while (treinamentosAtuais.length < qtde) {
-      treinamentosAtuais.push({ tema: '', link: '' });
+    if (formato === 'excel') exportarExcel(dados, `suporte_${ts}`, titulo);
+    else if (formato === 'txt') exportarTxt(dados, `suporte_${ts}`, titulo);
+    else if (formato === 'pdf') exportarPdf(dados, `suporte_${ts}`, titulo);
+  }
+
+  // ---- EXCEL ----
+  function exportarExcel(dados, nomeArquivo, tituloSheet) {
+    try {
+      const ws = XLSX.utils.json_to_sheet(dados);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, tituloSheet.substring(0, 31));
+
+      // Auto-ajuste de largura das colunas
+      const cols = Object.keys(dados[0]).map(key => {
+        const maxLen = Math.max(
+          key.length,
+          ...dados.map(row => String(row[key] || '').length)
+        );
+        return { wch: Math.min(maxLen + 2, 40) };
+      });
+      ws['!cols'] = cols;
+
+      XLSX.writeFile(wb, `${nomeArquivo}.xlsx`);
+      showToast('📄 Excel exportado com sucesso!', 'success');
+    } catch (e) {
+      showToast('Erro ao exportar Excel: ' + e.message, 'error');
     }
   }
-  renderizarCamposTreinamentos();
-}
 
-function adicionarUmTreinamento() {
-  treinamentosAtuais.push({ tema: '', link: '' });
-  document.getElementById('qtde-treinamentos').value = treinamentosAtuais.length;
-  renderizarCamposTreinamentos();
-}
+  // ---- TXT ----
+  function exportarTxt(dados, nomeArquivo, titulo) {
+    try {
+      const colunas = Object.keys(dados[0]);
+      // Calcula largura de cada coluna
+      const larguras = colunas.map(col =>
+        Math.max(col.length, ...dados.map(r => String(r[col] || '').length)) + 2
+      );
 
-function removerTreinamento(index) {
-  treinamentosAtuais.splice(index, 1);
-  document.getElementById('qtde-treinamentos').value = treinamentosAtuais.length;
-  renderizarCamposTreinamentos();
-}
+      let txt = `${titulo}\n`;
+      txt += `Gerado em: ${new Date().toLocaleString('pt-BR')}\n`;
+      txt += `Total de registros: ${dados.length}\n`;
+      txt += '='.repeat(larguras.reduce((a, b) => a + b, 0)) + '\n\n';
 
-function renderizarCamposTreinamentos() {
-  const container = document.getElementById('treinamentos-container');
-  container.innerHTML = '';
-  
-  if (treinamentosAtuais.length === 0) {
-    container.innerHTML = '<p style="text-align:center; opacity:0.5; font-size:14px;">Nenhum treinamento adicionado.</p>';
-    return;
+      // Cabeçalho
+      txt += colunas.map((col, i) => col.padEnd(larguras[i])).join('') + '\n';
+      txt += colunas.map((_, i) => '-'.repeat(larguras[i])).join('') + '\n';
+
+      // Dados
+      dados.forEach(row => {
+        txt += colunas.map((col, i) => String(row[col] || '—').padEnd(larguras[i])).join('') + '\n';
+      });
+
+      const blob = new Blob([txt], { type: 'text/plain;charset=utf-8' });
+      downloadBlob(blob, `${nomeArquivo}.txt`);
+      showToast('📄 TXT exportado com sucesso!', 'success');
+    } catch (e) {
+      showToast('Erro ao exportar TXT: ' + e.message, 'error');
+    }
   }
 
-  treinamentosAtuais.forEach((t, i) => {
-    const div = document.createElement('div');
-    div.style.cssText = 'border:1px solid var(--border-color); padding:15px; border-radius:8px; position:relative; background:var(--bg-lighter);';
-    div.innerHTML = `
+  // ---- PDF ----
+  function exportarPdf(dados, nomeArquivo, titulo) {
+    try {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+
+      // Título
+      doc.setFontSize(16);
+      doc.setTextColor(40, 40, 40);
+      doc.text(titulo, 14, 18);
+
+      // Subtítulo
+      doc.setFontSize(9);
+      doc.setTextColor(130, 130, 130);
+      doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}  |  Total: ${dados.length} registros`, 14, 25);
+
+      // Tabela
+      const colunas = Object.keys(dados[0]);
+      const linhas = dados.map(row => colunas.map(col => String(row[col] || '—')));
+
+      doc.autoTable({
+        head: [colunas],
+        body: linhas,
+        startY: 30,
+        theme: 'grid',
+        styles: {
+          fontSize: 8,
+          cellPadding: 3,
+          lineColor: [200, 200, 200],
+          lineWidth: 0.2,
+        },
+        headStyles: {
+          fillColor: [249, 115, 22],
+          textColor: [255, 255, 255],
+          fontStyle: 'bold',
+          fontSize: 8.5,
+        },
+        alternateRowStyles: {
+          fillColor: [248, 248, 248],
+        },
+        margin: { top: 30, left: 14, right: 14 },
+        didDrawPage: (data) => {
+          // Rodapé
+          doc.setFontSize(8);
+          doc.setTextColor(160, 160, 160);
+          const pageNum = doc.internal.getNumberOfPages();
+          doc.text(
+            `Página ${data.pageNumber} de ${pageNum}  —  Controle de Implantação`,
+            doc.internal.pageSize.width / 2, doc.internal.pageSize.height - 8,
+            { align: 'center' }
+          );
+        }
+      });
+
+      doc.save(`${nomeArquivo}.pdf`);
+      showToast('📄 PDF exportado com sucesso!', 'success');
+    } catch (e) {
+      showToast('Erro ao exportar PDF: ' + e.message, 'error');
+    }
+  }
+
+  // ─── TREINAMENTOS ────────────────────────────────────────────────
+  let treinamentosAtuais = [];
+
+  async function abrirModalTreinamentos(id) {
+    document.getElementById('treinamento-implantacao-id').value = id;
+    const container = document.getElementById('treinamentos-container');
+    container.innerHTML = '<div style="text-align:center; padding:20px;"><i data-lucide="loader-2" class="spinning"></i> Carregando...</div>';
+    document.getElementById('qtde-treinamentos').value = '';
+
+    abrirModal('modal-treinamentos');
+
+    try {
+      const treinamentos = await api('GET', `/api/implantacoes/${id}/treinamentos`);
+      treinamentosAtuais = treinamentos || [];
+      document.getElementById('qtde-treinamentos').value = treinamentosAtuais.length;
+      renderizarCamposTreinamentos();
+    } catch (e) {
+      container.innerHTML = `<div class="error" style="color:red; text-align:center;">Erro ao carregar: ${e.message}</div>`;
+    }
+  }
+
+  function fecharModalTreinamentos() {
+    fecharModal('modal-treinamentos');
+  }
+
+  function gerarCamposTreinamentos() {
+    const qtde = parseInt(document.getElementById('qtde-treinamentos').value) || 0;
+    // Mantém os existentes até o limite da quantidade, adiciona vazios se necessário
+    if (qtde < treinamentosAtuais.length) {
+      treinamentosAtuais = treinamentosAtuais.slice(0, qtde);
+    } else {
+      while (treinamentosAtuais.length < qtde) {
+        treinamentosAtuais.push({ tema: '', link: '' });
+      }
+    }
+    renderizarCamposTreinamentos();
+  }
+
+  function adicionarUmTreinamento() {
+    treinamentosAtuais.push({ tema: '', link: '' });
+    document.getElementById('qtde-treinamentos').value = treinamentosAtuais.length;
+    renderizarCamposTreinamentos();
+  }
+
+  function removerTreinamento(index) {
+    treinamentosAtuais.splice(index, 1);
+    document.getElementById('qtde-treinamentos').value = treinamentosAtuais.length;
+    renderizarCamposTreinamentos();
+  }
+
+  function renderizarCamposTreinamentos() {
+    const container = document.getElementById('treinamentos-container');
+    container.innerHTML = '';
+
+    if (treinamentosAtuais.length === 0) {
+      container.innerHTML = '<p style="text-align:center; opacity:0.5; font-size:14px;">Nenhum treinamento adicionado.</p>';
+      return;
+    }
+
+    treinamentosAtuais.forEach((t, i) => {
+      const div = document.createElement('div');
+      div.style.cssText = 'border:1px solid var(--border-color); padding:15px; border-radius:8px; position:relative; background:var(--bg-lighter);';
+      div.innerHTML = `
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
         <strong style="font-size:14px; color:var(--text-color);">Treinamento ${i + 1}</strong>
         <button type="button" class="btn-icon danger" style="padding:4px;" onclick="removerTreinamento(${i})" title="Remover">
@@ -1684,60 +1684,60 @@ function renderizarCamposTreinamentos() {
         </div>
       </div>
     `;
-    container.appendChild(div);
-  });
-  lucide.createIcons();
-}
-
-function habilitarEdicaoLink(index) {
-  const input = document.getElementById(`link-treinamento-${index}`);
-  if (input) {
-    input.removeAttribute('readonly');
-    input.style.background = '';
-    input.style.opacity = '1';
-    input.style.cursor = 'text';
-    input.focus();
-  }
-}
-
-
-async function salvarTreinamentos() {
-  const id = document.getElementById('treinamento-implantacao-id').value;
-  const btn = document.getElementById('btn-salvar-treinamentos');
-  
-  // Limpa treinamentos completamente em branco antes de salvar
-  const validos = treinamentosAtuais.filter(t => t.tema.trim() || t.link.trim());
-  
-  btn.disabled = true;
-  btn.innerHTML = '<i data-lucide="loader-2" class="spinning"></i> Salvando...';
-  lucide.createIcons();
-
-  try {
-    await api('PUT', `/api/implantacoes/${id}/treinamentos`, { treinamentos: validos });
-    showToast('Treinamentos salvos com sucesso!', 'success');
-    fecharModalTreinamentos();
-  } catch (e) {
-    showToast('Erro ao salvar treinamentos: ' + e.message, 'error');
-  } finally {
-    btn.disabled = false;
-    btn.innerHTML = '<i data-lucide="save"></i> Salvar Treinamentos';
+      container.appendChild(div);
+    });
     lucide.createIcons();
   }
-}
 
-// ─── INFO MODAL (SUPORTE) ────────────────────────────────────────
-function abrirModalInfoSuporte(r) {
-  document.getElementById('info-servidor').innerHTML = renderServidorBadge(r.servidor);
-  document.getElementById('info-cupom').textContent = r.emite_cupom_fiscal || 'Não informado';
-  document.getElementById('info-login').textContent = r.login_loja_express || '—';
-  document.getElementById('info-senha').textContent = r.senha_loja_express || '—';
-  document.getElementById('info-telefone').textContent = r.telefone || '—';
-  document.getElementById('info-observacao').textContent = r.observacao || 'Nenhuma observação.';
-  
-  abrirModal('modal-info-suporte');
-}
+  function habilitarEdicaoLink(index) {
+    const input = document.getElementById(`link-treinamento-${index}`);
+    if (input) {
+      input.removeAttribute('readonly');
+      input.style.background = '';
+      input.style.opacity = '1';
+      input.style.cursor = 'text';
+      input.focus();
+    }
+  }
 
-function fecharModalInfoSuporte() {
-  fecharModal('modal-info-suporte');
-}
+
+  async function salvarTreinamentos() {
+    const id = document.getElementById('treinamento-implantacao-id').value;
+    const btn = document.getElementById('btn-salvar-treinamentos');
+
+    // Limpa treinamentos completamente em branco antes de salvar
+    const validos = treinamentosAtuais.filter(t => t.tema.trim() || t.link.trim());
+
+    btn.disabled = true;
+    btn.innerHTML = '<i data-lucide="loader-2" class="spinning"></i> Salvando...';
+    lucide.createIcons();
+
+    try {
+      await api('PUT', `/api/implantacoes/${id}/treinamentos`, { treinamentos: validos });
+      showToast('Treinamentos salvos com sucesso!', 'success');
+      fecharModalTreinamentos();
+    } catch (e) {
+      showToast('Erro ao salvar treinamentos: ' + e.message, 'error');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '<i data-lucide="save"></i> Salvar Treinamentos';
+      lucide.createIcons();
+    }
+  }
+
+  // ─── INFO MODAL (SUPORTE) ────────────────────────────────────────
+  function abrirModalInfoSuporte(r) {
+    document.getElementById('info-servidor').innerHTML = renderServidorBadge(r.servidor);
+    document.getElementById('info-cupom').textContent = r.emite_cupom_fiscal || 'Não informado';
+    document.getElementById('info-login').textContent = r.login_loja_express || '—';
+    document.getElementById('info-senha').textContent = r.senha_loja_express || '—';
+    document.getElementById('info-telefone').textContent = r.telefone || '—';
+    document.getElementById('info-observacao').textContent = r.observacao || 'Nenhuma observação.';
+
+    abrirModal('modal-info-suporte');
+  }
+
+  function fecharModalInfoSuporte() {
+    fecharModal('modal-info-suporte');
+  }
 
