@@ -164,6 +164,9 @@ function mudarAba(aba) {
   if (aba === 'responsaveis') {
     carregarResponsaveis();
   }
+  if (aba === 'alertas') {
+    atualizarAlertas();
+  }
 }
 
 // ─── API ─────────────────────────────────────────────────────────
@@ -189,6 +192,7 @@ async function carregarDados() {
     allRecords = await api('GET', '/api/implantacoes');
     aplicarFiltros();
     atualizarCards();
+    atualizarAlertas();
   } catch (e) {
     showToast('Erro ao carregar dados: ' + e.message, 'error');
   }
@@ -220,6 +224,61 @@ function atualizarCards() {
   animarNumero('val-andamento',   emAndamento);
   animarNumero('val-inaugurados', inaugurados);
   animarNumero('val-parados',     parados);
+}
+
+// ─── ABA ALERTAS ──────────────────────────────────────────────────
+function atualizarAlertas() {
+  const alertas = allRecords.filter(r => {
+    return r.ummense_status && r.ummense_status.toLowerCase().includes('conclu') && r.status !== 'inaugurado';
+  });
+
+  // Atualizar badge
+  const badge = document.getElementById('badge-alertas');
+  if (alertas.length > 0) {
+    badge.textContent = alertas.length;
+    badge.style.display = 'inline-block';
+  } else {
+    badge.style.display = 'none';
+  }
+
+  // Se a aba estiver ativa, renderizar tabela
+  if (abaAtiva === 'alertas') {
+    const tbody = document.getElementById('alertas-table-body');
+    const counter = document.getElementById('alertas-table-counter');
+    
+    if (alertas.length === 0) {
+      counter.textContent = 'Nenhum alerta pendente.';
+      tbody.innerHTML = \`
+        <tr class="empty-row">
+          <td colspan="6">
+            <div class="empty-state">
+              <i data-lucide="check-circle" class="empty-icon" style="color:#22c55e"></i>
+              <p>Todos os clientes concluídos já foram inaugurados!</p>
+            </div>
+          </td>
+        </tr>\`;
+    } else {
+      counter.textContent = \`\${alertas.length} registro(s) exigem ação\`;
+      tbody.innerHTML = '';
+      alertas.forEach(r => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = \`
+          <td>\${badgeTipo(r.tipo)}</td>
+          <td>\${escHtml(clienteDisplay(r))}</td>
+          <td>\${escHtml(r.nome_loja || '—')}</td>
+          <td>\${formatarData(r.data_inauguracao)}</td>
+          <td>\${renderStatusBtn(r)}</td>
+          <td>
+            <button class="btn-primary" style="padding:4px 10px; font-size:13px;" onclick="fecharPortalDropdown(); abrirModalInauguracao(\${r.id})">
+              <i data-lucide="zap"></i> Inaugurar
+            </button>
+          </td>
+        \`;
+        tbody.appendChild(tr);
+      });
+    }
+    lucide.createIcons();
+  }
 }
 
 function animarNumero(id, target) {
@@ -529,6 +588,7 @@ async function mudarStatus(id, novoStatus) {
     if (idx !== -1) allRecords[idx] = updated;
     aplicarFiltros();
     atualizarCards();
+    atualizarAlertas();
     showToast('Status atualizado!', 'success');
   } catch (e) {
     showToast('Erro: ' + e.message, 'error');
@@ -618,6 +678,7 @@ async function confirmarInauguracao() {
     fecharModalInauguracao();
     aplicarFiltros();
     atualizarCards();
+    atualizarAlertas();
     showToast('🎉 Inauguração confirmada com sucesso!', 'success');
   } catch (e) {
     showToast('Erro ao confirmar: ' + e.message, 'error');

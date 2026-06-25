@@ -69,6 +69,7 @@ async function initDB() {
       `ALTER TABLE implantacoes ADD COLUMN IF NOT EXISTS abriu_chamado_teste BOOLEAN DEFAULT FALSE`,
       `ALTER TABLE implantacoes ADD COLUMN IF NOT EXISTS treinamentos JSONB DEFAULT '[]'::jsonb`,
       `ALTER TABLE implantacoes ADD COLUMN IF NOT EXISTS ummense_uuid VARCHAR(255) UNIQUE`,
+      `ALTER TABLE implantacoes ADD COLUMN IF NOT EXISTS ummense_status VARCHAR(50)`,
     ];
     for (const sql of migracoes) {
       await client.query(sql);
@@ -661,7 +662,8 @@ app.post('/api/webhook/ummense', async (req, res) => {
     const data_inaug   = payload.date?.end_date
                         || (payload.estimated_end_date ? payload.estimated_end_date.split(' ')[0] : null)
                         || new Date().toISOString().slice(0, 10); // fallback: data de hoje
-    const observacao   = payload.description || null;
+    const observacao   = ''; // A pedido do usuário, ignorar description como observação
+    const ummense_status = payload.status ? String(payload.status).toLowerCase().trim() : null;
 
     // 5. Verificar se já existe registro com este UUID
     const existente = await getOne(
@@ -679,10 +681,11 @@ app.post('/api/webhook/ummense', async (req, res) => {
           data_inauguracao = COALESCE(?, data_inauguracao),
           telefone = COALESCE(?, telefone),
           observacao = COALESCE(?, observacao),
+          ummense_status = ?,
           updated_at = CURRENT_TIMESTAMP
         WHERE ummense_uuid = ?
         RETURNING *
-      `, [tipo, nome_cliente, nome_loja, data_inaug, telefone, observacao, payload.uuid]);
+      `, [tipo, nome_cliente, nome_loja, data_inaug, telefone, observacao, ummense_status, payload.uuid]);
 
       const updated = result.rows[0];
       console.log('🔄 Implantação ATUALIZADA via webhook! ID:', updated.id);
@@ -693,10 +696,10 @@ app.post('/api/webhook/ummense', async (req, res) => {
     const result = await runWrite(`
       INSERT INTO implantacoes
         (tipo, nome_cliente, nome_loja, data_inauguracao,
-         responsavel_tecnico, telefone, observacao, status, ummense_uuid)
-      VALUES (?, ?, ?, ?, ?, ?, ?, 'parado', ?)
+         responsavel_tecnico, telefone, observacao, status, ummense_uuid, ummense_status)
+      VALUES (?, ?, ?, ?, ?, ?, ?, 'parado', ?, ?)
       RETURNING *
-    `, [tipo, nome_cliente, nome_loja, data_inaug, '', telefone, observacao, payload.uuid]);
+    `, [tipo, nome_cliente, nome_loja, data_inaug, 'A definir', telefone, observacao, payload.uuid, ummense_status]);
 
     const novo = result.rows[0];
     console.log('✅ Implantação CRIADA via webhook! ID:', novo.id);

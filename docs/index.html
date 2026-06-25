@@ -87,6 +87,10 @@
       <i data-lucide="users"></i>
       Responsáveis Técnicos
     </button>
+    <button class="tab-btn" id="tab-btn-alertas" onclick="mudarAba('alertas')">
+      <i data-lucide="bell"></i>
+      Alertas <span id="badge-alertas" class="tab-badge badge-alert">0</span>
+    </button>
   </nav>
 
   <!-- ═══════════════════════════ MAIN ═══════════════════════════ -->
@@ -437,6 +441,54 @@
         </div>
       </section>
     </div><!-- /aba-responsaveis -->
+
+    <!-- ══════════════ ABA ALERTAS ══════════════ -->
+    <div id="aba-alertas" class="tab-content">
+
+      <!-- Cabeçalho -->
+      <section class="suporte-header-panel">
+        <div class="suporte-header-info">
+          <div class="suporte-icon-wrap" style="background:linear-gradient(135deg,#ef4444,#f87171)">
+            <i data-lucide="bell-ring"></i>
+          </div>
+          <div>
+            <h2 class="suporte-title">Ação Necessária (Concluído na Ummense)</h2>
+            <p class="suporte-subtitle">Estes clientes foram marcados como concluídos na Ummense, mas ainda não estão "Inaugurados" no sistema.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Lista -->
+      <section class="table-panel">
+        <div class="table-header">
+          <span class="table-counter" id="alertas-table-counter">Carregando...</span>
+        </div>
+        <div class="table-wrapper">
+          <table class="main-table" id="alertas-table">
+            <thead>
+              <tr>
+                <th>Tipo</th>
+                <th>Cliente</th>
+                <th>Loja</th>
+                <th>Data Prevista</th>
+                <th>Status Atual</th>
+                <th style="width:160px">Ações</th>
+              </tr>
+            </thead>
+            <tbody id="alertas-table-body">
+              <tr class="empty-row">
+                <td colspan="6">
+                  <div class="empty-state">
+                    <i data-lucide="check-circle" class="empty-icon"></i>
+                    <p>Nenhum alerta no momento.</p>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div><!-- /aba-alertas -->
 
   </main>
 
