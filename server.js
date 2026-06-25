@@ -637,8 +637,12 @@ app.post('/api/webhook/ummense', async (req, res) => {
     // 3. Extrair nome da loja da description
     let nome_loja = null;
     if (payload.description) {
-      // Procura o trecho após "Nome e endereço da loja:"
-      const match = payload.description.match(/Nome e endere[çc]o da loja:\s*([^\n]+)/i);
+      // A description da Ummense vem sem quebras de linha (tudo grudado).
+      // Captura o texto após "Nome e endereço da loja:" até o próximo
+      // indicador de endereço (RUA, AV, RODOVIA, etc.) ou bloco de underscores.
+      const match = payload.description.match(
+        /Nome e endere[çc]o da loja:\s*(.+?)(?=RUA\s|AV[\.\s]|AVENIDA\s|RODOVIA\s|ESTRADA\s|BAIRRO\s|CEP|Importa[çc]|_{5,})/i
+      );
       if (match && match[1]) {
         nome_loja = match[1].trim();
       }
@@ -647,9 +651,12 @@ app.post('/api/webhook/ummense', async (req, res) => {
     if (!nome_loja) {
       nome_loja = payload.name || null;
     }
+    // Segurança: truncar para caber no VARCHAR(255)
+    if (nome_loja && nome_loja.length > 255) nome_loja = nome_loja.substring(0, 255);
 
     // 4. Extrair demais campos
-    const nome_cliente = payload.name || null;
+    let nome_cliente = payload.name || null;
+    if (nome_cliente && nome_cliente.length > 255) nome_cliente = nome_cliente.substring(0, 255);
     const telefone     = payload.contacts?.[0]?.cellphone || null;
     const data_inaug   = payload.date?.end_date
                         || (payload.estimated_end_date ? payload.estimated_end_date.split(' ')[0] : null)
